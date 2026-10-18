@@ -7,7 +7,7 @@ One control node orchestrates wardriving with an expandable number of sniffer no
 
 If an alert is triggered on a sniffer, it pauses its work, sends the alert to control, and then resumes wardriving.  GPS data is kept for 30 seconds on control.  Control uses this history to match sniffer observations from the 10 second sweep to the correct location in history. Unique MAC Counter note: On long drives that return to the same area as the start, some MACs may be counted as "unique" due to memory and performance constraints of the ESP platform. The count is a best effort representation, not a precise metric.
 
-Detection is essentially obsolete.  It will likely be removed in a future release.
+Flock detection is essentially obsolete.  It will likely be removed in a future release.
 
 Detections are logged to detectioncsv / mdetectioncsv files.  Future ingestion of these files is being considered.
 
