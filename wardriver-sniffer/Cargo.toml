@@ -1,0 +1,26 @@
+[package]
+name = "wardriver-sniffer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+ble = []
+
+[dependencies]
+wardriver-shared = { path = "../wardriver-shared", features = ["sniffer"] }
+wardriver-board = { path = "../wardriver-board" }
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-stats = { path = "../wardriver-stats", features = ["sniffer"] }
+log = "0.4"
+anyhow = "1"
+heapless = "0.8"
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"] }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"] }
+embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+embedded-svc = "0.29"
+embedded-io = "0.7"
+serde = { version = "1", default-features = false, features = ["derive"] }

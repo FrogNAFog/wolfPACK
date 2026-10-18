@@ -1,0 +1,35 @@
+[package]
+name = "wardriver-gateway"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata.esp-idf-sys]
+esp_idf_sdkconfig_defaults = ["sdkconfig.defaults", "sdkconfig.defaults.ble"]
+
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["../idf_extra/wardriver_tsens"]
+bindings_header = "../idf_extra/bindings_extra.h"
+
+[features]
+default = []
+board-xiao = ["wardriver-board/board-xiao"]
+
+[dependencies]
+wardriver-shared = { path = "../wardriver-shared", features = ["control"] }
+wardriver-fleet-realtime = { path = "../wardriver-fleet-realtime", features = ["esp"] }
+wardriver-board = { path = "../wardriver-board" }
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-packlink = { path = "../wardriver-packlink" }
+wardriver-stats = { path = "../wardriver-stats", features = ["control"] }
+log = "0.4"
+anyhow = "1"
+heapless = "0.8"
+indexmap = "2.7"
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"] }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"] }
+embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+embedded-svc = "0.29"
+embedded-io = "0.7"

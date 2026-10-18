@@ -1,0 +1,27 @@
+[package]
+name = "wardriver-fleet-realtime"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+# ESP-IDF wolfPACK paths (peer pool, downlink, ingress). Off for host roster tests.
+esp = [
+    "dep:wardriver-shared",
+    "dep:esp-idf-svc",
+    "dep:esp-idf-hal",
+    "dep:esp-idf-sys",
+]
+
+[dependencies]
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-packlink = { path = "../wardriver-packlink" }
+log = "0.4"
+anyhow = "1"
+wardriver-core = { path = "../wardriver-core" }
+wardriver-shared = { path = "../wardriver-shared", features = ["control"], optional = true }
+wardriver-stats = { path = "../wardriver-stats", features = ["control"] }
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"], optional = true }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"], optional = true }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"], optional = true }

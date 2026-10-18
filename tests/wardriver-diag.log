@@ -1,0 +1,142 @@
+utc=2026-04-28 08:29:25 t_ms=13871 uptime_ms=13821 rst=POWERON rst_n=1 free_heap=69120 min_ever_free_heap=50680 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:30:25 t_ms=73912 uptime_ms=73862 rst=POWERON rst_n=1 free_heap=64116 min_ever_free_heap=48588 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=13896 uptime_ms=13846 rst=POWERON rst_n=1 free_heap=69472 min_ever_free_heap=69472 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:32:16 t_ms=73922 uptime_ms=73872 rst=POWERON rst_n=1 free_heap=64828 min_ever_free_heap=47296 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:33:16 t_ms=133922 uptime_ms=133872 rst=POWERON rst_n=1 free_heap=64852 min_ever_free_heap=47296 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:34:17 t_ms=193942 uptime_ms=193892 rst=POWERON rst_n=1 free_heap=64852 min_ever_free_heap=47296 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:35:08 t_ms=13799 uptime_ms=13749 rst=POWERON rst_n=1 free_heap=69196 min_ever_free_heap=69196 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:36:08 t_ms=73802 uptime_ms=73752 rst=POWERON rst_n=1 free_heap=69076 min_ever_free_heap=68192 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:37:08 t_ms=133822 uptime_ms=133772 rst=POWERON rst_n=1 free_heap=69088 min_ever_free_heap=68192 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:38:08 t_ms=193842 uptime_ms=193792 rst=POWERON rst_n=1 free_heap=69088 min_ever_free_heap=68192 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:39:08 t_ms=253882 uptime_ms=253832 rst=POWERON rst_n=1 free_heap=69088 min_ever_free_heap=68192 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:41:00 t_ms=13801 uptime_ms=13751 rst=POWERON rst_n=1 free_heap=69072 min_ever_free_heap=69072 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10049 uptime_ms=9999 rst=POWERON rst_n=1 free_heap=64012 min_ever_free_heap=37336 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:46:27 t_ms=70049 uptime_ms=69999 rst=POWERON rst_n=1 free_heap=56300 min_ever_free_heap=37336 dedup_bssid=26 wifi_rows=26
+utc=2026-04-28 08:47:27 t_ms=130060 uptime_ms=130010 rst=POWERON rst_n=1 free_heap=47736 min_ever_free_heap=37336 dedup_bssid=30 wifi_rows=40
+utc=2026-04-28 08:48:16 t_ms=10044 uptime_ms=9994 rst=PANIC rst_n=4 free_heap=64620 min_ever_free_heap=59160 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:49:16 t_ms=70049 uptime_ms=69999 rst=PANIC rst_n=4 free_heap=57300 min_ever_free_heap=43916 dedup_bssid=15 wifi_rows=15
+utc=2026-04-28 08:50:16 t_ms=130059 uptime_ms=130009 rst=PANIC rst_n=4 free_heap=50324 min_ever_free_heap=43916 dedup_bssid=16 wifi_rows=30
+utc=2026-04-28 08:50:47 t_ms=10019 uptime_ms=9969 rst=PANIC rst_n=4 free_heap=65088 min_ever_free_heap=57820 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:51:47 t_ms=70019 uptime_ms=69969 rst=PANIC rst_n=4 free_heap=64220 min_ever_free_heap=53184 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:52:47 t_ms=130050 uptime_ms=130000 rst=PANIC rst_n=4 free_heap=64220 min_ever_free_heap=41264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:53:47 t_ms=190064 uptime_ms=190014 rst=PANIC rst_n=4 free_heap=64220 min_ever_free_heap=41264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:54:47 t_ms=250082 uptime_ms=250032 rst=PANIC rst_n=4 free_heap=64616 min_ever_free_heap=41264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:55:47 t_ms=310102 uptime_ms=310052 rst=PANIC rst_n=4 free_heap=64456 min_ever_free_heap=41264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 08:56:47 t_ms=370152 uptime_ms=370102 rst=PANIC rst_n=4 free_heap=64456 min_ever_free_heap=41264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:16:51 t_ms=10034 uptime_ms=9980 rst=POWERON rst_n=1 free_heap=16588 min_ever_free_heap=16268 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:17:51 t_ms=70068 uptime_ms=70014 rst=POWERON rst_n=1 free_heap=14144 min_ever_free_heap=13676 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:18:51 t_ms=130110 uptime_ms=130056 rst=POWERON rst_n=1 free_heap=15804 min_ever_free_heap=12964 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:19:51 t_ms=190110 uptime_ms=190056 rst=POWERON rst_n=1 free_heap=15228 min_ever_free_heap=12100 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:23:07 t_ms=10034 uptime_ms=9980 rst=POWERON rst_n=1 free_heap=16572 min_ever_free_heap=16236 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10048 uptime_ms=9994 rst=POWERON rst_n=1 free_heap=14484 min_ever_free_heap=14128 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10004 uptime_ms=9950 rst=POWERON rst_n=1 free_heap=16880 min_ever_free_heap=16524 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:28:55 t_ms=70044 uptime_ms=69990 rst=POWERON rst_n=1 free_heap=16308 min_ever_free_heap=14112 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:29:55 t_ms=130060 uptime_ms=130006 rst=POWERON rst_n=1 free_heap=16580 min_ever_free_heap=14112 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:30:55 t_ms=190060 uptime_ms=190006 rst=POWERON rst_n=1 free_heap=16580 min_ever_free_heap=14112 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:34:07 t_ms=10014 uptime_ms=9960 rst=POWERON rst_n=1 free_heap=16588 min_ever_free_heap=16268 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:37:09 t_ms=10044 uptime_ms=9990 rst=POWERON rst_n=1 free_heap=69332 min_ever_free_heap=69004 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:38:09 t_ms=70091 uptime_ms=70037 rst=POWERON rst_n=1 free_heap=64292 min_ever_free_heap=48200 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:39:09 t_ms=130111 uptime_ms=130057 rst=POWERON rst_n=1 free_heap=64292 min_ever_free_heap=48200 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10048 uptime_ms=9994 rst=POWERON rst_n=1 free_heap=69384 min_ever_free_heap=68760 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=70048 uptime_ms=69994 rst=POWERON rst_n=1 free_heap=62700 min_ever_free_heap=23036 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10050 uptime_ms=9996 rst=POWERON rst_n=1 free_heap=63552 min_ever_free_heap=38056 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 09:43:11 t_ms=70050 uptime_ms=69996 rst=POWERON rst_n=1 free_heap=57536 min_ever_free_heap=38056 dedup_bssid=33 wifi_rows=33
+utc=- t_ms=10014 uptime_ms=9960 rst=POWERON rst_n=1 free_heap=69612 min_ever_free_heap=68648 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:03:51 t_ms=10034 uptime_ms=9980 rst=POWERON rst_n=1 free_heap=69324 min_ever_free_heap=68376 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10044 uptime_ms=9990 rst=POWERON rst_n=1 free_heap=69612 min_ever_free_heap=68632 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:08:42 t_ms=70081 uptime_ms=70027 rst=POWERON rst_n=1 free_heap=52424 min_ever_free_heap=41896 dedup_bssid=63 wifi_rows=88
+utc=2026-04-28 10:09:42 t_ms=130081 uptime_ms=130027 rst=POWERON rst_n=1 free_heap=39784 min_ever_free_heap=29264 dedup_bssid=134 wifi_rows=342
+utc=2026-04-28 10:10:44 t_ms=10028 uptime_ms=9974 rst=PANIC rst_n=4 free_heap=61784 min_ever_free_heap=45676 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:11:44 t_ms=70050 uptime_ms=69996 rst=PANIC rst_n=4 free_heap=62112 min_ever_free_heap=45676 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=63884 min_ever_free_heap=52220 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:13:08 t_ms=70038 uptime_ms=69984 rst=POWERON rst_n=1 free_heap=46076 min_ever_free_heap=36080 dedup_bssid=198 wifi_rows=507
+utc=2026-04-28 10:14:02 t_ms=10042 uptime_ms=9988 rst=PANIC rst_n=4 free_heap=60904 min_ever_free_heap=49128 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:14:58 t_ms=10048 uptime_ms=9994 rst=POWERON rst_n=1 free_heap=63252 min_ever_free_heap=51724 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=63648 min_ever_free_heap=47284 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:16:50 t_ms=70071 uptime_ms=70017 rst=POWERON rst_n=1 free_heap=40212 min_ever_free_heap=25240 dedup_bssid=200 wifi_rows=668
+utc=2026-04-28 10:17:06 t_ms=10042 uptime_ms=9988 rst=PANIC rst_n=4 free_heap=60248 min_ever_free_heap=50532 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=62828 min_ever_free_heap=36252 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:18:21 t_ms=70058 uptime_ms=70004 rst=POWERON rst_n=1 free_heap=51952 min_ever_free_heap=36252 dedup_bssid=72 wifi_rows=153
+utc=2026-04-28 10:19:21 t_ms=130110 uptime_ms=130056 rst=POWERON rst_n=1 free_heap=44816 min_ever_free_heap=30520 dedup_bssid=95 wifi_rows=212
+utc=2026-04-28 10:19:56 t_ms=10050 uptime_ms=9996 rst=PANIC rst_n=4 free_heap=61948 min_ever_free_heap=52224 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:20:56 t_ms=70091 uptime_ms=70037 rst=PANIC rst_n=4 free_heap=61724 min_ever_free_heap=50716 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10018 uptime_ms=9964 rst=POWERON rst_n=1 free_heap=64068 min_ever_free_heap=53816 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:22:22 t_ms=70038 uptime_ms=69984 rst=POWERON rst_n=1 free_heap=44396 min_ever_free_heap=34712 dedup_bssid=81 wifi_rows=81
+utc=2026-04-28 10:23:22 t_ms=130081 uptime_ms=130027 rst=POWERON rst_n=1 free_heap=44644 min_ever_free_heap=32860 dedup_bssid=81 wifi_rows=81
+utc=2026-04-28 10:24:22 t_ms=190101 uptime_ms=190047 rst=POWERON rst_n=1 free_heap=44644 min_ever_free_heap=32860 dedup_bssid=90 wifi_rows=142
+utc=2026-04-28 10:25:09 t_ms=10032 uptime_ms=9978 rst=PANIC rst_n=4 free_heap=61288 min_ever_free_heap=48824 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=60032 min_ever_free_heap=51768 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:26:47 t_ms=70058 uptime_ms=70004 rst=POWERON rst_n=1 free_heap=44416 min_ever_free_heap=34172 dedup_bssid=93 wifi_rows=265
+utc=2026-04-28 10:27:14 t_ms=10038 uptime_ms=9984 rst=PANIC rst_n=4 free_heap=59892 min_ever_free_heap=50224 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:28:14 t_ms=70038 uptime_ms=69984 rst=PANIC rst_n=4 free_heap=60164 min_ever_free_heap=49900 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=10058 uptime_ms=10004 rst=POWERON rst_n=1 free_heap=64004 min_ever_free_heap=49136 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 10:29:40 t_ms=70070 uptime_ms=70016 rst=POWERON rst_n=1 free_heap=54472 min_ever_free_heap=43308 dedup_bssid=55 wifi_rows=63
+utc=2026-04-28 10:30:40 t_ms=130111 uptime_ms=130057 rst=POWERON rst_n=1 free_heap=39720 min_ever_free_heap=28556 dedup_bssid=154 wifi_rows=284
+utc=2026-04-28 10:31:40 t_ms=190160 uptime_ms=190106 rst=POWERON rst_n=1 free_heap=39720 min_ever_free_heap=28556 dedup_bssid=181 wifi_rows=405
+utc=2026-04-28 10:32:12 t_ms=10048 uptime_ms=9994 rst=PANIC rst_n=4 free_heap=62904 min_ever_free_heap=51636 dedup_bssid=0 wifi_rows=0
+BOOT utc=- t_ms=361 ver=0.1.0 rst=POWERON rst_n=1 free_heap=200156 min_ever_free_heap=200088
+utc=- t_ms=10050 uptime_ms=9996 rst=POWERON rst_n=1 free_heap=63472 min_ever_free_heap=62236 dedup_bssid=0 wifi_rows=0
+utc=- t_ms=70050 uptime_ms=69996 rst=POWERON rst_n=1 free_heap=57852 min_ever_free_heap=44876 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:29:47 t_ms=130051 uptime_ms=129997 rst=POWERON rst_n=1 free_heap=40272 min_ever_free_heap=29848 dedup_bssid=155 wifi_rows=435
+utc=2026-04-28 22:30:47 t_ms=190080 uptime_ms=190026 rst=POWERON rst_n=1 free_heap=24004 min_ever_free_heap=12556 dedup_bssid=284 wifi_rows=890
+BOOT utc=- t_ms=231 ver=0.1.0 rst=PANIC rst_n=4 free_heap=200156 min_ever_free_heap=200088
+utc=2026-04-28 22:31:14 t_ms=10038 uptime_ms=9984 rst=PANIC rst_n=4 free_heap=61008 min_ever_free_heap=60760 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:32:14 t_ms=70058 uptime_ms=70004 rst=PANIC rst_n=4 free_heap=56328 min_ever_free_heap=45880 dedup_bssid=0 wifi_rows=0
+BOOT utc=- t_ms=361 ver=0.1.0 rst=POWERON rst_n=1 free_heap=200156 min_ever_free_heap=200088
+utc=- t_ms=10028 uptime_ms=9974 rst=POWERON rst_n=1 free_heap=56960 min_ever_free_heap=46832 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:33:52 t_ms=70041 uptime_ms=69987 rst=POWERON rst_n=1 free_heap=53520 min_ever_free_heap=43048 dedup_bssid=10 wifi_rows=34
+utc=2026-04-28 22:34:52 t_ms=130058 uptime_ms=130004 rst=POWERON rst_n=1 free_heap=37952 min_ever_free_heap=27468 dedup_bssid=88 wifi_rows=315
+BOOT utc=- t_ms=230 ver=0.1.0 rst=PANIC rst_n=4 free_heap=200156 min_ever_free_heap=200088
+utc=2026-04-28 22:35:48 t_ms=10032 uptime_ms=9978 rst=PANIC rst_n=4 free_heap=54716 min_ever_free_heap=44084 dedup_bssid=0 wifi_rows=0
+BOOT utc=- t_ms=361 ver=0.1.0 rst=POWERON rst_n=1 free_heap=200156 min_ever_free_heap=200088
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=56076 min_ever_free_heap=42416 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:37:02 t_ms=70050 uptime_ms=69996 rst=POWERON rst_n=1 free_heap=41840 min_ever_free_heap=30384 dedup_bssid=37 wifi_rows=37
+BOOT utc=- t_ms=231 ver=0.1.0 rst=PANIC rst_n=4 free_heap=200156 min_ever_free_heap=200088
+utc=2026-04-28 22:37:46 t_ms=10018 uptime_ms=9964 rst=PANIC rst_n=4 free_heap=58808 min_ever_free_heap=52148 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:38:46 t_ms=70038 uptime_ms=69984 rst=PANIC rst_n=4 free_heap=58700 min_ever_free_heap=52148 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:39:46 t_ms=130071 uptime_ms=130017 rst=PANIC rst_n=4 free_heap=58972 min_ever_free_heap=52148 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:40:46 t_ms=190091 uptime_ms=190037 rst=PANIC rst_n=4 free_heap=58972 min_ever_free_heap=52148 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:41:46 t_ms=250130 uptime_ms=250076 rst=PANIC rst_n=4 free_heap=58972 min_ever_free_heap=52148 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:42:46 t_ms=310140 uptime_ms=310086 rst=PANIC rst_n=4 free_heap=56948 min_ever_free_heap=46208 dedup_bssid=0 wifi_rows=0
+BOOT utc=- t_ms=361 ver=0.1.0 rst=POWERON rst_n=1 free_heap=200156 min_ever_free_heap=200088
+utc=- t_ms=10038 uptime_ms=9984 rst=POWERON rst_n=1 free_heap=56920 min_ever_free_heap=46448 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:44:12 t_ms=70048 uptime_ms=69994 rst=POWERON rst_n=1 free_heap=46232 min_ever_free_heap=44236 dedup_bssid=56 wifi_rows=353
+utc=2026-04-28 22:45:12 t_ms=130058 uptime_ms=130004 rst=POWERON rst_n=1 free_heap=34440 min_ever_free_heap=29328 dedup_bssid=175 wifi_rows=932
+BOOT utc=- t_ms=231 ver=0.1.0 rst=PANIC rst_n=4 free_heap=200156 min_ever_free_heap=200088
+utc=2026-04-28 22:45:25 t_ms=10038 uptime_ms=9984 rst=PANIC rst_n=4 free_heap=58788 min_ever_free_heap=52264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:46:25 t_ms=70071 uptime_ms=70017 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=52264 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:47:25 t_ms=130091 uptime_ms=130037 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:48:25 t_ms=190111 uptime_ms=190057 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:49:25 t_ms=250160 uptime_ms=250106 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:50:25 t_ms=310170 uptime_ms=310116 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:51:25 t_ms=370190 uptime_ms=370136 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:52:25 t_ms=430210 uptime_ms=430156 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:53:26 t_ms=490250 uptime_ms=490196 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:54:26 t_ms=550280 uptime_ms=550226 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:55:26 t_ms=610310 uptime_ms=610256 rst=PANIC rst_n=4 free_heap=58924 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:56:26 t_ms=670340 uptime_ms=670286 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:57:26 t_ms=730360 uptime_ms=730306 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:58:26 t_ms=790410 uptime_ms=790356 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 22:59:26 t_ms=850460 uptime_ms=850406 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:00:26 t_ms=910480 uptime_ms=910426 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:01:26 t_ms=970510 uptime_ms=970456 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:02:26 t_ms=1030520 uptime_ms=1030466 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:03:26 t_ms=1090540 uptime_ms=1090486 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:04:26 t_ms=1150570 uptime_ms=1150516 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:05:26 t_ms=1210580 uptime_ms=1210526 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:06:26 t_ms=1270604 uptime_ms=1270550 rst=PANIC rst_n=4 free_heap=61332 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:07:26 t_ms=1330630 uptime_ms=1330576 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:08:26 t_ms=1390630 uptime_ms=1390576 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:09:26 t_ms=1450630 uptime_ms=1450576 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:10:26 t_ms=1510660 uptime_ms=1510606 rst=PANIC rst_n=4 free_heap=61592 min_ever_free_heap=51060 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:11:26 t_ms=1570700 uptime_ms=1570646 rst=PANIC rst_n=4 free_heap=58784 min_ever_free_heap=45364 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:12:26 t_ms=1630724 uptime_ms=1630670 rst=PANIC rst_n=4 free_heap=58512 min_ever_free_heap=45364 dedup_bssid=0 wifi_rows=0
+BOOT utc=- t_ms=361 ver=0.1.0 rst=POWERON rst_n=1 free_heap=200156 min_ever_free_heap=200088
+utc=- t_ms=10050 uptime_ms=9996 rst=POWERON rst_n=1 free_heap=58380 min_ever_free_heap=45360 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:13:50 t_ms=70050 uptime_ms=69996 rst=POWERON rst_n=1 free_heap=53888 min_ever_free_heap=30764 dedup_bssid=3 wifi_rows=6
+utc=2026-04-28 23:14:50 t_ms=130094 uptime_ms=130040 rst=POWERON rst_n=1 free_heap=38456 min_ever_free_heap=27992 dedup_bssid=73 wifi_rows=235
+utc=2026-04-28 23:15:50 t_ms=190150 uptime_ms=190096 rst=POWERON rst_n=1 free_heap=34028 min_ever_free_heap=23312 dedup_bssid=183 wifi_rows=636
+BOOT utc=- t_ms=230 ver=0.1.0 rst=PANIC rst_n=4 free_heap=200156 min_ever_free_heap=200088
+utc=2026-04-28 23:16:04 t_ms=10038 uptime_ms=9984 rst=PANIC rst_n=4 free_heap=58096 min_ever_free_heap=52232 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:17:04 t_ms=70071 uptime_ms=70017 rst=PANIC rst_n=4 free_heap=58444 min_ever_free_heap=47000 dedup_bssid=0 wifi_rows=0
+utc=2026-04-28 23:18:04 t_ms=130110 uptime_ms=130056 rst=PANIC rst_n=4 free_heap=56656 min_ever_free_heap=35648 dedup_bssid=0 wifi_rows=0

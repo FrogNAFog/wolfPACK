@@ -1,0 +1,51 @@
+[build]
+target = "riscv32imac-esp-espidf"
+# Pin the target dir to the repo's own `target/` (relative path resolves against this
+# config file's dir = repo root). This overrides any global `~/.cargo/config.toml`
+# `target-dir`, so builds are self-contained/portable and the flash scripts' image
+# resolver (which looks under repo `target/`) always finds the ELF. It also keeps
+# esp-idf-sys's project-root resolution (OUT_DIR pop-count) inside the workspace,
+# so `sdkconfig.defaults.ble` is always picked up.
+target-dir = "target"
+# Cap parallel rustc/C++ jobs: ESP-IDF + `build-std` spikes RAM; unbounded `-j` can OOM small
+# machines or IDE hosts (e.g. Cursor). Override per-shell: `export CARGO_BUILD_JOBS=1`.
+jobs = 4
+
+[alias]
+# Two [[bin]] targets share src/main.rs; Cargo picks neither from `--features` alone.
+# - Control: `default-run` in Cargo.toml, or `cargo run --features "control board-xiao"`.
+# - Sniffer: always pass `--bin` (or use flash-sniffer / ./tools/wardriver flash sniffer).
+# - Board-aware flash scripts: `./tools/wardriver flash-control` / `flash-sniffers`.
+flash-control = "run --release --bin esp32-wardriver-control --features control"
+flash-sniffer = "run --release --bin esp32-wardriver-sniffer --features sniffer"
+flash-gateway = "run --release --bin esp32-wardriver-gateway --features gateway --config .cargo/gateway.toml"
+flash-xiao = "run --release --bin esp32-wardriver-control --features control,board-xiao"
+build-control = "build --release --bin esp32-wardriver-control --features control"
+build-sniffer = "build --release --bin esp32-wardriver-sniffer --features sniffer"
+build-xiao = "build --release --bin esp32-wardriver-control --features control,board-xiao"
+check-control = "check --bin esp32-wardriver-control --features control"
+check-sniffer = "check --bin esp32-wardriver-sniffer --features sniffer"
+# Host x86 tests (proto + core, wolfPACK wire). Workspace default target is ESP; see .cursor/rules/host-rust-tests.mdc.
+test-host = "test --target x86_64-unknown-linux-gnu -p wardriver-proto -p wardriver-core -p wardriver-board -p wardriver-stats -p wardriver-packlink -p wardriver-mobile-core -p wardriver-fleet-realtime --features wardriver-stats/control"
+check-gateway = "check --bin esp32-wardriver-gateway --features gateway --config .cargo/gateway.toml"
+erase-flash = "espflash erase-flash --chip esp32c5"
+erase-nvs = "espflash erase-parts --chip esp32c5 nvs --partition-table partitions.csv"
+# PMK helpers: run `./tools/espnow-pmk gen` or `./tools/espnow-pmk rm` from the repo root
+# (Cargo `[alias]` cannot apply a portable host `--target`; repo `build.target` is ESP32 RISC-V).
+
+[target.riscv32imac-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32c5"
+# ESP32-C5: pinned to ESP-IDF v6.0.1 (full C5 support, mbedTLS 4.x, cross-signed CA bundle).
+ESP_IDF_VERSION = "v6.0.1"
+# Custom partition table: IDF resolves `partitions.csv` relative to esp-idf-sys `out/` (CMAKE_SOURCE_DIR),
+# not the repo root. Copy ours into that tree before CMake runs (esp-idf-sys BUILD-OPTIONS.md: ESP_IDF_GLOB_*).
+ESP_IDF_GLOB_PTABLE_BASE = { value = ".", relative = true }
+ESP_IDF_GLOB_PTABLE_CSV = "partitions.csv"

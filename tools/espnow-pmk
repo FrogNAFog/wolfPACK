@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Host-side ESP-NOW PMK helpers. Must not use the repo default `build.target` (ESP32 RISC-V),
+# so we always pass an explicit host triple to `cargo run`.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+HOST="$(rustc -vV | sed -n 's/^host: //p')"
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+  gen)
+    exec cargo run --manifest-path "$ROOT/wardriver-keygen/Cargo.toml" \
+      --bin espnow-pmk-gen --target "$HOST" -- "$@"
+    ;;
+  rm)
+    exec cargo run --manifest-path "$ROOT/wardriver-keygen/Cargo.toml" \
+      --bin espnow-pmk-rm --target "$HOST" -- "$@"
+    ;;
+  *)
+    echo "usage: $0 gen|rm [-- extra args]" >&2
+    exit 1
+    ;;
+esac

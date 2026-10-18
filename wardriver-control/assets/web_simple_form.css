@@ -1,0 +1,49 @@
+/* Augments web_theme.css on SD-backed form pages — scoped; does not override body/fonts globally */
+.form-simple .small {
+  color: var(--ui-muted);
+  font-size: 0.86rem;
+}
+
+.form-simple h1 {
+  font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-accent-hot);
+  margin: 0 0 8px;
+}
+
+.form-simple label {
+  display: block;
+  margin-top: 0.75rem;
+  font-weight: 600;
+  color: var(--ui-link);
+}
+
+.form-simple input[type="text"],
+.form-simple input[type="password"] {
+  max-width: 100%;
+}
+
+.form-simple textarea {
+  font-size: 0.88rem;
+  min-height: 10rem;
+}
+
+.form-simple button {
+  margin-top: 0.75rem;
+}
+
+.form-simple .err {
+  color: var(--ui-err);
+  margin-top: 0.5rem;
+}
+
+.form-simple .ok {
+  color: var(--ui-ok);
+  margin-top: 0.5rem;
+}
+
+.form-simple code.path {
+  word-break: break-all;
+}

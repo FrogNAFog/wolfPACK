@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wolfPACK web flasher</title>
+  <style>
+    :root {
+      --bg: #0a0612;
+      --header: #12081f;
+      --surface: #161024;
+      --accent: #2ee8f5;
+      --hot: #ffb347;
+      --chrome: #ff2d92;
+      --text: #d8d4e8;
+      --muted: #8b849e;
+      --ok: #5ee0a8;
+      --warn: #fbbf24;
+      --err: #ff7a8a;
+      --border: rgba(46, 232, 245, 0.14);
+      --ink: rgba(10, 6, 18, 0.94);
+      --mono: ui-monospace, "Cascadia Code", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      padding-bottom: 24px;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 14px; }
+    .hd {
+      background: var(--header);
+      border-bottom: 3px solid var(--accent);
+      padding: 14px 0 12px;
+      margin-bottom: 18px;
+    }
+    .title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: linear-gradient(105deg, #f0ecff 0%, var(--accent) 45%, var(--chrome) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .sub { margin: 4px 0 0; font-size: 0.82rem; color: var(--chrome); letter-spacing: 0.06em; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .small { font-size: 0.86rem; }
+    .mono { font-family: var(--mono); font-size: 0.86em; word-break: break-all; }
+    code {
+      font-family: var(--mono);
+      background: var(--ink);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 0.88em;
+      color: var(--accent);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--ink);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active {
+      background: rgba(255, 45, 146, 0.14);
+      border-color: var(--chrome);
+      color: #f0ecff;
+      box-shadow: inset 0 0 0 1px rgba(255, 45, 146, 0.3);
+    }
+    .chip:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 45, 146, 0.45);
+      background: var(--ink);
+      color: var(--text);
+      font: inherit;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(46, 232, 245, 0.35);
+    }
+    textarea { min-height: 4.5rem; font-family: var(--mono); font-size: 0.84rem; }
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2ee8f5 0%, #1ba8b8 100%);
+      color: #050208;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { background: linear-gradient(135deg, #1ba8b8 0%, #158a98 100%); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row input[type="text"] { flex: 1 1 180px; }
+    .status { margin-top: 8px; min-height: 1.2em; font-size: 0.86rem; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.warn { color: var(--warn); }
+    .fingerprint {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--ink);
+      border: 1px solid var(--border);
+    }
+    .fingerprint .k { color: var(--chrome); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .warn-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      background: rgba(255, 179, 71, 0.1);
+      color: var(--text);
+      font-size: 0.86rem;
+    }
+    .warn-box strong { color: var(--warn); }
+    #fallback {
+      border: 1px solid rgba(255, 179, 71, 0.55);
+      background: rgba(255, 179, 71, 0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+    #fallback h2 { color: var(--hot); border-color: rgba(255, 179, 71, 0.3); }
+    #fallback pre {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--ink);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .install-host { margin-top: 4px; }
+    /* esp-web-tools 10.4.0 hardcodes an open shadow DOM (no config switch, no
+       ::part hooks); the only shipped customization path is the slotted
+       `activate` button, which is light DOM. The host element gets no visuals
+       so the themed button below is the only pill rendered. */
+    .install-host esp-web-install-button { display: block; }
+    .install-host esp-web-install-button > button {
+      min-height: 48px;
+      padding: 0 20px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2ee8f5 0%, #1ba8b8 100%);
+      color: #050208;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(46, 232, 245, 0.25);
+    }
+    .install-host esp-web-install-button > button:hover { filter: brightness(1.08); }
+    .install-host esp-web-install-button > button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .footer { margin-top: 18px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="hd">
+    <div class="wrap">
+      <h1 class="title">wolfPACK web flasher</h1>
+      <p class="sub">per-visitor fleet keys &middot; ESP32-C5</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div id="fallback" hidden>
+      <h2>Web flashing unavailable here</h2>
+      <p id="fallback-reason" class="small muted"></p>
+      <p class="small">Use the USB + script quick start instead. Unzip the release kit and run:</p>
+      <pre>./tools/install-flash-tools.sh
+./tools/wardriver flash-control
+./tools/wardriver flash-sniffers --batch
+./tools/wardriver flash-gateway</pre>
+      <p class="small muted">Full instructions: <code>docs/ENV.md</code> (Quick start).</p>
+    </div>
+
+    <section>
+      <h2>1. Device role</h2>
+      <p class="small muted">Pick the board image to flash.</p>
+      <div id="flavor-list" class="chips"></div>
+    </section>
+
+    <section id="control-section" hidden>
+      <h2>1a. Control Node Hardware</h2>
+      <p class="small muted">Which control board are you flashing?</p>
+      <div id="control-list" class="chips"></div>
+    </section>
+
+    <section>
+      <h2>2. Fleet key</h2>
+      <p class="small muted">
+        A fleet key binds all boards you flash from this browser into one private network.
+        Each fleet name gets its own 16-byte key, kept in this browser&rsquo;s <code>localStorage</code>.
+      </p>
+
+      <div class="row">
+        <input type="text" id="fleet-name" placeholder="Fleet name (e.g. van-1)" autocomplete="off" spellcheck="false" />
+        <button id="create-fleet" class="btn">Create fleet</button>
+      </div>
+      <div id="fleet-list" class="chips" style="margin-top:10px"></div>
+
+      <div class="fingerprint">
+        <div class="k">Key fingerprint (SHA-256)</div>
+        <div id="fingerprint" class="mono">&mdash;</div>
+      </div>
+
+      <div class="row">
+        <button id="export-fleet" class="btn ghost">Export .hex</button>
+        <input type="file" id="import-file" accept=".hex,.txt" style="display:none" />
+        <button id="import-file-btn" class="btn ghost">Import .hex file</button>
+      </div>
+      <textarea id="paste-area" placeholder="Paste an exported key here (32 hex chars, optional comment lines)" style="margin-top:10px"></textarea>
+      <button id="import-paste" class="btn ghost">Import pasted key</button>
+
+      <div class="warn-box">
+        <strong>Keep your key safe.</strong> Losing the exported key orphans this fleet
+        &mdash; boards can no longer join it, and you cannot rejoin them from this browser.
+        A full-chip erase wipes the firmware <strong>and</strong> the fleet key baked into
+        the board, returning it to an unprovisioned state; the fleet keys saved in this
+        browser (and any exported <code>.hex</code>) are untouched &mdash; re-flash with
+        the same fleet to re-bind the board. To move to a new browser, export the key
+        first, then import it there.
+        <br /><br />
+        <strong>Erasing a board:</strong> erase happens in the installer&rsquo;s
+        first-install dialog: when you connect a board for the first time, tick
+        the &ldquo;Erase device&rdquo; option in that dialog to wipe it
+        (firmware + fleet key) before the new image is written.
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Flash</h2>
+      <p class="small muted">
+        Selecting a role and a fleet patches that role&rsquo;s released image with your fleet key,
+        then hands it to the web installer. On first connect your browser will ask for
+        permission to use the USB device; click <em>Connect</em> and, if the board does not
+        auto-reset, hold its BOOT button while the dialog opens.
+      </p>
+      <div class="install-host" id="install-host">
+        <!-- esp-web-tools 10.4.0: the slotted `activate` button is the shipped
+             customization path (open shadow DOM is hardcoded; the internal
+             fallback button only renders when nothing is slotted). -->
+        <esp-web-install-button id="install-button" hidden>
+          <button id="install-label" slot="activate">Select a role and a fleet</button>
+        </esp-web-install-button>
+      </div>
+      <p id="flash-status" class="status"></p>
+    </section>
+
+    <div class="footer">
+      wolfPACK &middot; images are patched in-browser; the raw fleet key is never shown on this page.
+    </div>
+  </div>
+
+  <!-- Pure functions (no DOM/crypto/fetch). Extracted and unit-tested by node. -->
+  <script id="wolfpack-core">
+    function hexToBytes(hex) {
+      const s = String(hex).toLowerCase().replace(/[^0-9a-f]/g, "");
+      if (s.length % 2 !== 0) throw new Error("odd-length hex");
+      const out = new Uint8Array(s.length / 2);
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16);
+      return out;
+    }
+    function bytesToHex(bytes) {
+      let s = "";
+      for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, "0");
+      return s;
+    }
+    // 32-hex-tolerant: drop comment lines (#), then all non-hex; require exactly 32 hex chars.
+    function parseFleetKeyHex(text) {
+      const cleaned = String(text)
+        .split(/\r?\n/)
+        .filter(function (l) { return !l.trim().startsWith("#"); })
+        .join(" ")
+        .replace(/[^0-9a-fA-F]/g, "");
+      if (cleaned.length !== 32) {
+        throw new Error("expected exactly 32 hex chars (16 bytes), got " + cleaned.length);
+      }
+      return hexToBytes(cleaned);
+    }
+    // Parse the optional export header emitted by exportFleet():
+    //   "# wolfPACK fleet <name>  fingerprint: <fp>"
+    // Returns {name, fingerprint} — both null when the header is absent, so a
+    // bare 32-hex export (no header) still imports.
+    function parseFleetExportHeader(text) {
+      const m = String(text).match(/# wolfPACK fleet (.+?)\s+fingerprint: ([0-9a-fA-F]{64})/);
+      if (!m) return { name: null, fingerprint: null };
+      return { name: m[1].trim(), fingerprint: m[2].toLowerCase() };
+    }
+    // Accept "0x<hex>", bare hex, or a non-negative integer.
+    function parsePmkOffset(offset) {
+      if (typeof offset === "number") {
+        if (!Number.isInteger(offset) || offset < 0) throw new Error("bad PMK offset: " + offset);
+        return offset;
+      }
+      const s = String(offset).trim();
+      const n = parseInt(s, 16);
+      if (!Number.isInteger(n) || n < 0) throw new Error("bad PMK offset: " + offset);
+      return n;
+    }
+    function patchPmkAtOffset(binBytes, offset, keyBytes) {
+      if (!keyBytes || keyBytes.length !== 16) throw new Error("key must be exactly 16 bytes");
+      if (offset < 0 || offset + 16 > binBytes.length) throw new Error("PMK offset out of range");
+      const out = new Uint8Array(binBytes.length);
+      out.set(binBytes, 0);
+      out.set(keyBytes, offset);
+      return out;
+    }
+    // ESP application-image integrity repair (verified against esptool 5.x
+    // image-info on a real esp32c5 app image):
+    //   - 24-byte header at imageBase (8 base + 16 extended; byte 23 of the
+    //     image = extended header flags, bit 0x01... here index 23 of the
+    //     image is hash_appended)
+    //   - segments: 8-byte (load_addr, data_len) LE + data, count img[base+1]
+    //   - after the last segment: zero pad up to the last byte of its 16-byte
+    //     block, which holds checksum = 0xEF XOR over all segment bytes
+    //   - if hash_appended: 32-byte SHA-256 of image[imageBase .. checksum]
+    //     immediately after the checksum byte
+    // Patching the fleet key inside a segment invalidates both; this function
+    // verifies the image is intact BEFORE the patch and repairs both values
+    // AFTER it. Throws on any inconsistency so a broken kit never flashes.
+    function verifyEspImageChecksums(binBytes, imageBase) {
+      const segCount = binBytes[imageBase + 1];
+      if (binBytes[imageBase] !== 0xe9) throw new Error("no ESP image at 0x" + imageBase.toString(16));
+      let pos = imageBase + 0x18, segs = [];
+      for (let s = 0; s < segCount && s < 32; s++) {
+        const dlen = binBytes[pos + 4] | (binBytes[pos + 5] << 8) | (binBytes[pos + 6] << 16) | (binBytes[pos + 7] << 24);
+        pos += 8;
+        const dstart = pos, dend = pos + dlen;
+        if (dend > binBytes.length) throw new Error("segment out of range at 0x" + dstart.toString(16));
+        segs.push([dstart, dend]);
+        pos = dend;
+      }
+      // Checksum byte: pad then place it as the LAST byte of its 16-byte
+      // block. When the segment stream ends exactly on a boundary, that is a
+      // full block later: align16(end + 1) - 1 (esptool's rule; a plain
+      // align16(end) - 1 off-by-one-block fails 5-segment images).
+      const chkOff = ((pos + 16) & ~15) - 1;
+      if (chkOff + 1 + 32 > binBytes.length) throw new Error("image trailer out of range");
+      const x = xorSegments(binBytes, segs);
+      return { segs, chkOff, computedChecksum: x, checksumOk: x === binBytes[chkOff], hashAppended: (binBytes[imageBase + 23] & 0x01) !== 0 };
+    }
+    function xorSegments(binBytes, segs) {
+      let x = 0xef;
+      for (const seg of segs) for (let i = seg[0]; i < seg[1]; i++) x ^= binBytes[i];
+      return x;
+    }
+    // Deep-clone the static manifest, force the erase prompt / no-improv flags,
+    // and swap every build's part path for the blob: URL of the patched bytes.
+    function buildRuntimeManifest(staticManifest, blobUrl) {
+      const m = JSON.parse(JSON.stringify(staticManifest));
+      m.new_install_prompt_erase = true;
+      m.new_install_improv_wait_time = 0;
+      (m.builds || []).forEach(function (build) {
+        (build.parts || []).forEach(function (part) { part.path = blobUrl; });
+      });
+      return m;
+    }
+  </script>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button?module"
+          integrity="sha384-f+fR3K1mnKB2tVps4hdEh+qJvLgH2bKw81Yn+eNE3+gE8YpqocjkxQON4k19I3e/"
+          crossorigin="anonymous"></script>
+
+  <script type="module">
+    const LS_FLEETS = "wolfpack-fleets";
+    const LS_KEY_PREFIX = "wolfpack-fleet-";
+
+    const $ = function (id) { return document.getElementById(id); };
+
+    const state = {
+      flavor: null,
+      controlOpen: false,
+      staticManifest: null,
+      pmkEntry: null,
+      pmkTopSha256: null,
+      fleetName: null,
+      keyBytes: null,
+      binCache: new Map(),
+      prepareGeneration: 0,
+      _prevBinUrl: null,
+      _prevManifestUrl: null,
+    };
+
+    function setStatus(el, msg, kind) {
+      el.textContent = msg || "";
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    // ---- localStorage ----
+    function loadFleetNames() {
+      try {
+        const raw = localStorage.getItem(LS_FLEETS);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.filter(function (x) { return typeof x === "string" && x.length; }) : [];
+      } catch (e) { return []; }
+    }
+    function saveFleetNames(names) {
+      try { localStorage.setItem(LS_FLEETS, JSON.stringify(names)); } catch (e) {}
+    }
+    function loadKey(name) {
+      try {
+        const h = localStorage.getItem(LS_KEY_PREFIX + name);
+        if (!h) return null;
+        return parseFleetKeyHex(h);
+      } catch (e) { return null; }
+    }
+    function saveKey(name, bytes) {
+      try { localStorage.setItem(LS_KEY_PREFIX + name, bytesToHex(bytes)); } catch (e) {}
+    }
+
+    // ---- fleet key ops ----
+    async function fingerprintOf(bytes) {
+      const d = await crypto.subtle.digest("SHA-256", bytes);
+      return bytesToHex(new Uint8Array(d));
+    }
+
+    async function createFleet(name) {
+      name = (name || "").trim();
+      if (!name) { setStatus($("fleet-status"), "Enter a fleet name first.", "err"); return; }
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      saveKey(name, bytes);
+      const names = loadFleetNames();
+      if (names.indexOf(name) === -1) names.push(name);
+      saveFleetNames(names);
+      $("fleet-name").value = name;
+      await selectFleet(name);
+    }
+
+    async function selectFleet(name) {
+      const bytes = loadKey(name);
+      if (!bytes) { setStatus($("fleet-status"), "Fleet key not found for " + name, "err"); return; }
+      state.fleetName = name;
+      state.keyBytes = bytes;
+      $("fleet-name").value = name;
+      renderFleetList(name);
+      $("fingerprint").textContent = await fingerprintOf(bytes);
+      prepareFlash();
+    }
+
+    function renderFleetList(active) {
+      const box = $("fleet-list");
+      box.innerHTML = "";
+      const names = loadFleetNames();
+      if (!names.length) {
+        box.innerHTML = '<span class="muted small">No fleets yet &mdash; create one above.</span>';
+        return;
+      }
+      names.forEach(function (n) {
+        const b = document.createElement("button");
+        b.className = "chip" + (n === active ? " active" : "");
+        b.textContent = n;
+        b.addEventListener("click", function () { selectFleet(n); });
+        box.appendChild(b);
+      });
+    }
+
+    function exportFleet() {
+      if (!state.fleetName || !state.keyBytes) { setStatus($("fleet-status"), "No active fleet to export.", "err"); return; }
+      (async function () {
+        try {
+          const fp = await fingerprintOf(state.keyBytes);
+          const content =
+            "# wolfPACK fleet " + state.fleetName + "  fingerprint: " + fp + "\n" +
+            bytesToHex(state.keyBytes) + "\n";
+          const blob = new Blob([content], { type: "text/plain" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "wolfPACK-fleet-" + state.fleetName + ".hex";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+          setStatus($("fleet-status"), "Exported " + a.download, "ok");
+        } catch (e) { setStatus($("fleet-status"), "Export failed: " + e.message, "err"); }
+      })();
+    }
+
+    async function importFleet(text) {
+      if (!state.fleetName) { setStatus($("fleet-status"), "Create or select a fleet name first.", "err"); return; }
+      try {
+        const bytes = parseFleetKeyHex(text);
+        const head = parseFleetExportHeader(text);
+        // Hard reject: a present fingerprint that does not match the imported
+        // bytes means a different key was exported than the one being stored.
+        if (head.fingerprint) {
+          const actual = await fingerprintOf(bytes);
+          if (actual !== head.fingerprint) {
+            setStatus($("fleet-status"), "Import failed: key does not match its exported fingerprint — possible wrong file.", "err");
+            return;
+          }
+        }
+        // Soft warn: embedded name present but differs from the active fleet.
+        if (head.name && head.name !== state.fleetName) {
+          const ok = confirm("This export is for fleet \u201C" + head.name + "\u201D, not \u201C" + state.fleetName + "\u201D. Store it under \u201C" + state.fleetName + "\u201D anyway?");
+          if (!ok) { setStatus($("fleet-status"), "Import cancelled.", "warn"); return; }
+        }
+        // No silent overwrite: an existing, different key requires explicit OK.
+        const existing = loadKey(state.fleetName);
+        if (existing && bytesToHex(existing) !== bytesToHex(bytes)) {
+          const ok = confirm("Fleet \u201C" + state.fleetName + "\u201D already has a key. Replace it with the imported key?");
+          if (!ok) { setStatus($("fleet-status"), "Import cancelled.", "warn"); return; }
+        }
+        saveKey(state.fleetName, bytes);
+        const names = loadFleetNames();
+        if (names.indexOf(state.fleetName) === -1) names.push(state.fleetName);
+        saveFleetNames(names);
+        await selectFleet(state.fleetName);
+        $("paste-area").value = "";
+        setStatus($("fleet-status"), "Imported key into fleet " + state.fleetName, "ok");
+      } catch (e) { setStatus($("fleet-status"), "Import failed: " + e.message, "err"); }
+    }
+
+    function onImportFile(ev) {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function () { importFleet(String(reader.result)); };
+      reader.onerror = function () { setStatus($("fleet-status"), "Could not read that file.", "err"); };
+      reader.readAsText(f);
+      ev.target.value = "";
+    }
+
+    // ---- flavor + flash ----
+    async function loadPmkEntry(flavor) {
+      const res = await fetch("pmks.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("pmks.json HTTP " + res.status);
+      const j = await res.json();
+      state.pmkTopSha256 = j.pmk_sha256 || null;
+      const entry = (j.pmk || []).find(function (e) { return e.flavor === flavor; });
+      if (!entry) throw new Error("no PMK entry for " + flavor);
+      return entry;
+    }
+
+    async function selectFlavor(flavor) {
+      state.flavor = flavor;
+      renderFlavorList(flavor);
+      try {
+        const res = await fetch("manifest-" + flavor + ".json", { cache: "no-store" });
+        if (!res.ok) throw new Error("manifest HTTP " + res.status);
+        state.staticManifest = await res.json();
+        state.pmkEntry = await loadPmkEntry(flavor);
+        setStatus($("flash-status"), "Loaded " + flavor + " (PMK @ 0x" +
+          parsePmkOffset(state.pmkEntry.offset).toString(16) + ")", "ok");
+        prepareFlash();
+      } catch (e) {
+        state.staticManifest = null;
+        state.pmkEntry = null;
+        setStatus($("flash-status"), "Could not load " + flavor + ": " + e.message, "err");
+      }
+    }
+
+    async function getBin(file) {
+      if (state.binCache.has(file)) return state.binCache.get(file);
+      const res = await fetch(file, { cache: "no-store" });
+      if (!res.ok) throw new Error("image HTTP " + res.status);
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      state.binCache.set(file, bytes);
+      return bytes;
+    }
+
+    async function prepareFlash() {
+      const btn = $("install-button");
+      if (!state.staticManifest || !state.pmkEntry || !state.keyBytes) {
+        setInstallReady(false);
+        return;
+      }
+      // Latest-wins guard: a rapid flavor/fleet re-selection can start a newer
+      // prepare before this one finishes. Capture the target flavor + a monotonic
+      // generation up front; if a newer prepare started (or the flavor moved on)
+      // before we finalize, drop this result without touching the shared state.
+      const gen = ++state.prepareGeneration;
+      const targetFlavor = state.flavor;
+      try {
+        const bin = await getBin(state.pmkEntry.file);
+        const offset = parsePmkOffset(state.pmkEntry.offset);
+        // PMK skew guard: the 16 bytes at the recorded offset must hash to the
+        // recorded sha256. A stale pmks.json against a moved/regenerated PMK
+        // would otherwise patch the wrong location silently.
+        const expected = (state.pmkEntry.sha256 || state.pmkTopSha256 || "").toLowerCase();
+        if (!expected) {
+          setInstallReady(false);
+          setStatus($("flash-status"), "Prepare failed: pmks.json has no recorded PMK sha256", "err");
+          return;
+        }
+        const actual = await fingerprintOf(bin.slice(offset, offset + 16));
+        if (actual !== expected) {
+          setInstallReady(false);
+          setStatus($("flash-status"), "version skew: pmks.json does not match the image - use the matching release", "err");
+          return;
+        }
+        // ESP app-image integrity: the fleet key lands inside the app image,
+        // so verify the embedded image checksum/hash BEFORE patching, then
+        // repair both AFTER the patch (the bootloader refuses an image whose
+        // trailer no longer matches its bytes).
+        const imageBase = parsePmkOffset(state.pmkEntry.image_base || "0x10000");
+        const pre = verifyEspImageChecksums(bin, imageBase);
+        if (!pre.checksumOk) {
+          setInstallReady(false);
+          setStatus($("flash-status"), "image integrity check failed: app image checksum does not match its bytes - use a matching release", "err");
+          return;
+        }
+        const patched = patchPmkAtOffset(bin, offset, state.keyBytes);
+        patched[pre.chkOff] = xorSegments(patched, pre.segs);
+        if (pre.hashAppended) {
+          const digest = await fingerprintOf(patched.slice(imageBase, pre.chkOff + 1));
+          patched.set(hexToBytes(digest), pre.chkOff + 1);
+        }
+        const binUrl = URL.createObjectURL(new Blob([patched], { type: "application/octet-stream" }));
+        const runtimeManifest = buildRuntimeManifest(state.staticManifest, binUrl);
+        const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(runtimeManifest, null, 2)], { type: "application/json" }));
+        // Stale-prepare guard: if a newer prepare started, or the active flavor
+        // changed while we were awaiting, do NOT clobber the install button —
+        // revoke only the two URLs this call just made and return.
+        if (gen !== state.prepareGeneration || targetFlavor !== state.flavor) {
+          URL.revokeObjectURL(binUrl);
+          URL.revokeObjectURL(manifestUrl);
+          return;
+        }
+        if (state._prevBinUrl) URL.revokeObjectURL(state._prevBinUrl);
+        if (state._prevManifestUrl) URL.revokeObjectURL(state._prevManifestUrl);
+        state._prevBinUrl = binUrl;
+        state._prevManifestUrl = manifestUrl;
+        btn.manifest = manifestUrl;
+        $("install-label").textContent = "Flash " + state.flavor;
+        setInstallReady(true);
+        setStatus($("flash-status"), "Ready — " + state.flavor + " patched with the " + state.fleetName + " key.", "ok");
+      } catch (e) {
+        setInstallReady(false);
+        setStatus($("flash-status"), "Prepare failed: " + e.message, "err");
+      }
+    }
+
+    function installLibraryLoaded() {
+      return typeof (window.customElements && customElements.get("esp-web-install-button")) === "function";
+    }
+
+    function setInstallReady(on) {
+      const btn = $("install-button");
+      // CDN-load gate: an enabled button only works when the esp-web-tools
+      // custom element actually registered. If the module failed to load,
+      // enabling it would do nothing — surface the fallback panel instead.
+      if (on && !installLibraryLoaded()) {
+        $("fallback").hidden = false;
+        $("fallback-reason").textContent = "installer library failed to load (CDN unreachable)";
+        btn.hidden = true;
+        return;
+      }
+      btn.hidden = !on;
+    }
+
+    // ---- support / fallback ----
+    function installSupport() {
+      const El = window.customElements && customElements.get("esp-web-install-button");
+      if (El && "isSupported" in El) return { supported: El.isSupported, allowed: El.isAllowed };
+      return { supported: "serial" in navigator, allowed: window.isSecureContext };
+    }
+
+    function renderFlavorList(active) {
+      const box = $("flavor-list");
+      box.innerHTML = "";
+      // The 1a section is driven purely by state.controlOpen (no derived OR
+      // against the active flavor's prefix), so toggling control while a control
+      // sub-flavor is selected collapses it, as expected.
+      const controlOpen = state.controlOpen;
+      function chip(list, label, isActive, fn) {
+        const b = document.createElement("button");
+        b.className = "chip" + (isActive ? " active" : "");
+        b.textContent = label;
+        b.addEventListener("click", fn);
+        list.appendChild(b);
+      }
+      chip(box, "sniffer", active === "sniffer", function () { state.controlOpen = false; selectFlavor("sniffer"); });
+      chip(box, "gateway", active === "gateway", function () { state.controlOpen = false; selectFlavor("gateway"); });
+      chip(box, "control", !!active && active.startsWith("control-"), function () {
+        state.controlOpen = !controlOpen;
+        renderFlavorList(state.flavor);
+      });
+      const controlBox = $("control-list");
+      controlBox.innerHTML = "";
+      $("control-section").hidden = !controlOpen;
+      if (controlOpen) {
+        chip(controlBox, "Xiao Expansion Base", active === "control-xiao", function () { state.controlOpen = true; selectFlavor("control-xiao"); });
+        chip(controlBox, "C5 Marauder Adapter", active === "control-marauder", function () { state.controlOpen = true; selectFlavor("control-marauder"); });
+      }
+    }
+
+    // ---- post-install handoff back to the page ----
+    // esp-web-tools 10.4.0 never closes its install dialog on completion: after
+    // "Installation complete!" the Next button only swaps the dialog to its
+    // post-install screen ("Install wolfPACK" / "Logs & Console"), where users
+    // get stuck. There is no manifest flag to suppress that screen, but the
+    // dialog's own close path is public in the shipped bundle:
+    //   ewt-install-dialog._closeDialog() -> <ew-dialog>.close() -> "closed"
+    //   -> _handleClose() restores the body scroll lock and removes the dialog
+    //   element from the DOM (and install-button.js already closes the serial
+    //   port on that "closed" event). So we watch document.body for the dialog
+    //   the button element appends, detect the completion screen, and drive
+    //   that close path ourselves a beat later. The page's install button is
+    //   untouched, so the page drops straight back to the ready state.
+    function handOffCompletedInstall() {
+      const DIALOG_TAG = "ewt-install-dialog";
+      let mo = null;
+      function completeScreenShown(d) {
+        return !!(d.shadowRoot && d.shadowRoot.textContent &&
+                 d.shadowRoot.textContent.indexOf("Installation complete") !== -1);
+      }
+      function armDialog(d) {
+        let completed = false;
+        d.addEventListener("closed", function () {
+          if (completed) {
+            setStatus($("flash-status"), "Flashing complete — " + state.flavor +
+              " is live. Plug in the next board and hit Flash " + state.flavor + " again.", "ok");
+          } else {
+            setStatus($("flash-status"), "Install closed without flashing.", "warn");
+          }
+        }, { once: true });
+        const tick = window.setInterval(function () {
+          if (!document.body.contains(d)) { window.clearInterval(tick); return; }
+          if (!completeScreenShown(d)) return;
+          completed = true;
+          window.clearInterval(tick);
+          // Let the user see "Installation complete!" for a moment, then take
+          // the dialog's own close path (grace period, not instant).
+          window.setTimeout(function () {
+            try {
+              if (typeof d._closeDialog === "function") { d._closeDialog(); return; }
+            } catch (e) { /* fall through to the last resort */ }
+            // Last resort if the close API is gone: restore the scroll lock,
+            // then detach so the page is interactive again.
+            document.body.style.overflow = "";
+            d.remove();
+          }, 1400);
+        }, 250);
+      }
+      function scan() {
+        const dialogs = document.querySelectorAll(DIALOG_TAG);
+        dialogs.forEach(function (d) {
+          if (d._wolfpackArmed) return;
+          d._wolfpackArmed = true;
+          armDialog(d);
+        });
+        // No dialog on screen: stop watching the whole body. The next install
+        // button click re-arms (re-creates) the observer, so re-installs work.
+        if (dialogs.length === 0 && mo) {
+          mo.disconnect();
+          mo = null;
+        }
+      }
+      function arm() {
+        if (mo) return;
+        mo = new MutationObserver(scan);
+        mo.observe(document.body, { childList: true, subtree: true });
+        scan();
+      }
+      // The slotted `activate` button is the entry point; capture the click so
+      // the observer is re-armed before the dialog element is appended.
+      const btn = $("install-button");
+      if (btn) btn.addEventListener("click", arm, true);
+      arm();
+    }
+
+    function init() {
+      renderFlavorList(null);
+      renderFleetList(null);
+      handOffCompletedInstall();
+
+      const sup = installSupport();
+      if (!sup.supported || !sup.allowed) {
+        $("fallback").hidden = false;
+        $("fallback-reason").textContent = !sup.supported
+          ? "This browser has no WebSerial. Use Chromium desktop (Chrome/Edge) on a secure (HTTPS or localhost) page."
+          : "This page must be served over HTTPS or on localhost to use the USB device.";
+        setInstallReady(false);
+      }
+
+      $("create-fleet").addEventListener("click", function () { createFleet($("fleet-name").value); });
+      $("export-fleet").addEventListener("click", exportFleet);
+      $("import-file-btn").addEventListener("click", function () { $("import-file").click(); });
+      $("import-file").addEventListener("change", onImportFile);
+      $("import-paste").addEventListener("click", function () { importFleet($("paste-area").value); });
+      $("fleet-name").addEventListener("keydown", function (e) { if (e.key === "Enter") createFleet(e.target.value); });
+    }
+
+    init();
+  </script>
+</body>
+</html>

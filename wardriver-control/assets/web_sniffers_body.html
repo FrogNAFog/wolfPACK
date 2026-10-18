@@ -1,0 +1,979 @@
+<main class="sa-page sa-wrap">
+    <h2 class="sa-title" style="margin-top: 8px; font-size: 1.1rem">
+        Sniffer fleet &amp; channel plan
+    </h2>
+    <p class="muted small">
+        The control node sends the custom channel plan to each sniffer over ESP-NOW. The plan saves to the SD card.
+    </p>
+    <p id="status" class="muted" style="margin-top: 8px"></p>
+
+    <div id="planCard" class="card" style="margin-top: 10px">
+        <h3 style="margin: 0 0 8px 0">Channel plan</h3>
+        <div class="planRow">
+            <label>
+                Dwell (ms)
+                <input
+                    id="dwellInp"
+                    type="number"
+                    min="50"
+                    max="10000"
+                    step="10"
+                    style="width: 6em"
+                />
+            </label>
+            <span class="muted small"
+                >Saved revision <code id="planRev">0</code></span
+            >
+        </div>
+        <div class="planRow">
+            <label><input id="i24" type="checkbox" /> 2.4&nbsp;GHz</label>
+            <label><input id="i5" type="checkbox" /> 5&nbsp;GHz</label>
+            <label><input id="idfs" type="checkbox" /> 5&nbsp;GHz DFS</label>
+        </div>
+        <div class="planRow">
+            <span class="muted small">Band assignment</span>
+            <label
+                ><input
+                    type="radio"
+                    name="band_mode"
+                    value="auto"
+                    checked
+                />
+                Auto-balance channels</label
+            >
+            <label
+                ><input type="radio" name="band_mode" value="manual" /> Manual
+                per sniffer</label
+            >
+        </div>
+        <div class="planRow planRow-ch24">
+            <label style="flex: 1"
+                >2.4&nbsp;GHz channels
+                <input
+                    id="ch24"
+                    type="text"
+                    style="width: 100%"
+                    placeholder="1,2,3,4,5,6,7,8,9,10,11"
+                />
+            </label>
+            <!-- 2.4 GHz channel presets stacked beside input -->
+            <div class="ch24Presets">
+                <button type="button" class="ch24-preset" data-ch24="1-11">
+                    1-11
+                </button>
+                <button type="button" class="ch24-preset" data-ch24="1,6,11">
+                    1,6,11
+                </button>
+            </div>
+        </div>
+        <div class="planRow">
+            <label style="flex: 1"
+                >5&nbsp;GHz channels
+                <input
+                    id="ch5"
+                    type="text"
+                    style="width: 100%"
+                    placeholder="36,40,44,48,149,..."
+                />
+            </label>
+            <button type="button" data-default="5">Reset</button>
+        </div>
+        <div class="planRow">
+            <label style="flex: 1"
+                >5&nbsp;GHz DFS channels
+                <input
+                    id="ch5d"
+                    type="text"
+                    style="width: 100%"
+                    placeholder="52,56,60,64,100,..."
+                />
+            </label>
+            <button type="button" data-default="5_dfs">Reset</button>
+        </div>
+        <div class="planRow planActionsRow">
+            <!-- Save + reset stacked for touch-friendly taps -->
+            <div class="planActionsLeft">
+                <button id="savePlan" type="button">Save plan</button>
+                <button id="resetAll" type="button" style="color: #c2410c">
+                    Reset All to Defaults
+                </button>
+            </div>
+            <span id="planStatus" class="muted small"></span>
+        </div>
+        <p id="hopCycle" class="muted small" style="margin-top: 4px"></p>
+    </div>
+
+    <div id="list" class="card" style="margin-top: 10px">
+        <p id="listMessage" class="muted">Loading...</p>
+        <div
+            id="snifferScrollWrap"
+            style="
+                display: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            "
+        >
+            <table class="sn">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>MAC</th>
+                        <th>Role</th>
+                        <th class="sn-th-band">Band</th>
+                        <th class="sn-th-pin">Pin</th>
+                        <th>Bucket</th>
+                        <th>BLE</th>
+                        <th>State</th>
+                        <th>Boot</th>
+                        <th>Reboots</th>
+                        <th>Seen</th>
+                        <th>CPU</th>
+                        <th>Heap</th>
+                        <th>Adoption</th>
+                        <th>Assign</th>
+                    </tr>
+                </thead>
+                <tbody id="snifferTbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <style>
+        .planRow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+            flex-wrap: wrap;
+        }
+        .planRow input[type="text"],
+        .planRow input[type="number"] {
+            padding: 2px 4px;
+        }
+        td.sn-cband {
+            white-space: nowrap;
+        }
+        td.sn-cband label {
+            margin-right: 6px;
+        }
+        td.sn-cpin input {
+            width: 4em;
+            padding: 2px 4px;
+        }
+        td.sn-cbucket code {
+            font-size: 0.9em;
+        }
+        .planActionsLeft {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .ch24Presets {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .role-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .role-btns button {
+            min-height: 44px;
+        }
+        .role-btns button.role-btn-active {
+            font-weight: bold;
+            border-color: #2563eb;
+        }
+    </style>
+
+    <script>
+        let PLAN_CACHE = null;
+        let PLAN_SERVER = null; // snapshot of last-served plan for diff-based fills
+        let SNIFFER_CACHE = [];
+        /** @type {Record<string, {assigned_band: number, pinned_channel: number}>} */
+        let SNIFFER_SERVER = {}; // per-sniffer snapshot for diff-based band/pin updates
+
+        // Compare a DOM value (checkbox, text input, number input) against a server value.
+        // Returns true when the DOM currently shows the same value as the server snapshot,
+        // meaning the user has not changed it.
+        function domMatchesServer(domEl, serverVal) {
+            if (domEl.type === "checkbox") {
+                return domEl.checked === !!serverVal;
+            }
+            return String(domEl.value) === String(serverVal);
+        }
+
+        function snifferBandDomValue(bandTd) {
+            const checked = bandTd.querySelector('input[type="radio"]:checked');
+            return checked ? Number(checked.value) : 0;
+        }
+
+        function pinDomValue(pinTd) {
+            const inp = pinTd.querySelector("input");
+            if (!inp) return 0;
+            const v = Number(inp.value || 0);
+            return v > 0 ? v : 0;
+        }
+
+        function pinServerVal(pinnedChannel) {
+            return pinnedChannel && Number(pinnedChannel) > 0
+                ? Number(pinnedChannel)
+                : 0;
+        }
+
+        function fmtKiB(bytes) {
+            if (bytes == null || bytes === 0) return "0";
+            return (bytes / 1024).toFixed(1) + " KiB";
+        }
+        function lastSeenAgo(nowMs, lastMs) {
+            if (!lastMs) return "-";
+            const d = nowMs - Number(lastMs);
+            if (d < 0 || d > 86400000) return "-";
+            if (d < 1500) return "just now";
+            const sec = Math.floor(d / 1000);
+            if (sec < 60) return sec + "s ago";
+            return Math.floor(sec / 60) + "m ago";
+        }
+        const SNIFFER_QUIET_STALE_MS = 20000;
+        function snifferIsQuietStale(nowMs, lastMs) {
+            if (!lastMs) return true;
+            const d = nowMs - Number(lastMs);
+            if (d < 0 || d > 86400000) return true;
+            return d >= SNIFFER_QUIET_STALE_MS;
+        }
+        function memLine(s) {
+            const mf = s.mem_heap_free != null ? Number(s.mem_heap_free) : null;
+            const mt =
+                s.mem_heap_total != null ? Number(s.mem_heap_total) : null;
+            const mp =
+                s.mem_heap_avail_pct != null ? s.mem_heap_avail_pct : null;
+            if (
+                mf != null &&
+                mt != null &&
+                mt > 0 &&
+                mp != null &&
+                typeof mp === "number"
+            )
+                return mp + "% - " + fmtKiB(mf);
+            if (mf != null) return fmtKiB(mf) + " free";
+            return "-";
+        }
+        function roleLabel(wire) {
+            if (wire === 2) return "-";
+            return wire === 1 ? "BLE" : "WiFi";
+        }
+        function stateLabel(wire) {
+            return wire === 1 ? "SCANNING" : wire === 0 ? "IDLE" : "ERROR";
+        }
+        function adoptionLabel(state) {
+            const st = state != null ? Number(state) : 0;
+            if (st === 1) return "Pending";
+            if (st === 2) return "Adopted";
+            if (st === 3) return "Removed";
+            return "-";
+        }
+        function adoptionActionsHtml(id, state) {
+            const st = state != null ? Number(state) : 0;
+            if (st === 2) {
+                return (
+                    '<button type="button" class="sn-adopt-remove" data-sid="' +
+                    id +
+                    '">Remove</button>'
+                );
+            }
+            if (st === 1 || st === 3 || st === 0) {
+                return (
+                    '<button type="button" class="sn-adopt-btn" data-sid="' +
+                    id +
+                    '">Adopt</button>'
+                );
+            }
+            return "";
+        }
+        function bandLabel(wire) {
+            if (wire === 1) return "2.4&nbsp;GHz";
+            if (wire === 2) return "5&nbsp;GHz";
+            return "-";
+        }
+
+        function currentBandMode() {
+            const checked = document.querySelector(
+                'input[name="band_mode"]:checked',
+            );
+            return checked && checked.value === "manual" ? "manual" : "auto";
+        }
+
+        function manualBandMode() {
+            return currentBandMode() === "manual";
+        }
+
+        function updateBandPinColumnVisibility() {
+            const show = manualBandMode();
+            document
+                .querySelectorAll(
+                    ".sn-th-band, .sn-th-pin, .sn-cband, .sn-cpin",
+                )
+                .forEach(function (el) {
+                    el.style.display = show ? "" : "none";
+                });
+        }
+
+        function assignFormHtml(snifferId, roleWire) {
+            const rw =
+                roleWire != null && !Number.isNaN(Number(roleWire))
+                    ? Number(roleWire)
+                    : 0;
+            const isBle = rw === 1;
+            const sid = String(snifferId);
+            return (
+                '<div class="role-btns" data-sid="' +
+                sid +
+                '">' +
+                '<button type="button" class="role-btn' +
+                (isBle ? "" : " role-btn-active") +
+                '" data-role="wifi">WiFi</button>' +
+                '<button type="button" class="role-btn' +
+                (isBle ? " role-btn-active" : "") +
+                '" data-role="ble">BLE</button>' +
+                "</div>"
+            );
+        }
+
+        function bandRadiosHtml(snifferId, currentBand, fiveGzCap) {
+            const sid = String(snifferId);
+            let b = Number(currentBand) || 0;
+            // Manual mode: every WiFi sniffer must be 2.4 or 5 (default 2.4).
+            if (b !== 1 && b !== 2) b = 1;
+            const fiveDisabled = !fiveGzCap;
+            const dfs = fiveDisabled
+                ? ' disabled title="5 GHz not available on this sniffer"'
+                : "";
+            return (
+                "" +
+                '<label><input type="radio" name="band-' +
+                sid +
+                '" data-sid="' +
+                sid +
+                '" value="1"' +
+                (b === 1 ? " checked" : "") +
+                " /> 2.4</label>" +
+                '<label><input type="radio" name="band-' +
+                sid +
+                '" data-sid="' +
+                sid +
+                '" value="2"' +
+                (b === 2 ? " checked" : "") +
+                dfs +
+                " /> 5</label>"
+            );
+        }
+
+        function bandReadonlyHtml(wire) {
+            return '<span class="muted">' + bandLabel(wire) + "</span>";
+        }
+
+        function pinInputHtml(snifferId, pinnedCh) {
+            const sid = String(snifferId);
+            const v = pinnedCh && Number(pinnedCh) > 0 ? Number(pinnedCh) : "";
+            return (
+                '<input type="number" min="0" max="200" placeholder="0" data-sid="' +
+                sid +
+                '" value="' +
+                v +
+                '" />'
+            );
+        }
+
+        function bucketHtml(channels) {
+            if (!channels || channels.length === 0)
+                return '<span class="muted">-</span>';
+            return "<code>" + channels.join(",") + "</code>";
+        }
+
+        function ensureRow(tbody, snifferId, roleWire) {
+            let tr = tbody.querySelector(
+                'tr[data-sniffer-id="' + String(snifferId) + '"]',
+            );
+            if (tr) return tr;
+            tr = document.createElement("tr");
+            tr.dataset.snifferId = String(snifferId);
+            tr.innerHTML =
+                '<td class="sn-cid"></td>' +
+                '<td class="sn-cmac"><code></code></td>' +
+                '<td class="sn-crole"></td>' +
+                '<td class="sn-cband"></td>' +
+                '<td class="sn-cpin"></td>' +
+                '<td class="sn-cbucket"></td>' +
+                '<td class="sn-cble"></td>' +
+                '<td class="sn-cstate"></td>' +
+                '<td class="sn-cboot"><code></code></td>' +
+                '<td class="sn-creboot"></td>' +
+                '<td class="sn-cseen"></td>' +
+                '<td class="sn-ccpu"></td>' +
+                '<td class="sn-cheap"></td>' +
+                '<td class="sn-cadopt"></td>' +
+                '<td class="sn-cassign">' +
+                assignFormHtml(snifferId, roleWire) +
+                "</td>";
+            tbody.appendChild(tr);
+            return tr;
+        }
+
+        function syncSnifferRows(sniffers, nowMs) {
+            const tbody = document.getElementById("snifferTbody");
+            const wrap = document.getElementById("snifferScrollWrap");
+            const msg = document.getElementById("listMessage");
+            if (!sniffers || sniffers.length === 0) {
+                wrap.style.display = "none";
+                tbody.innerHTML = "";
+                SNIFFER_SERVER = {};
+                msg.style.display = "";
+                msg.className = "muted";
+                msg.textContent = "No sniffers yet (wait for ESP-NOW hellos).";
+                return;
+            }
+            msg.style.display = "none";
+            wrap.style.display = "";
+            const want = new Set(
+                sniffers.map(function (s) {
+                    return String(s.sniffer_id);
+                }),
+            );
+            for (const tr of Array.from(
+                tbody.querySelectorAll("tr[data-sniffer-id]"),
+            )) {
+                if (!want.has(tr.dataset.snifferId)) {
+                    delete SNIFFER_SERVER[tr.dataset.snifferId];
+                    tr.remove();
+                }
+            }
+            const sorted = sniffers.slice().sort(function (a, b) {
+                return Number(a.sniffer_id) - Number(b.sniffer_id);
+            });
+            for (const s of sorted) {
+                const id = String(s.sniffer_id);
+                const r = s.role != null ? Number(s.role) : 0;
+                const tr = ensureRow(tbody, id, r);
+                const assignTd = tr.querySelector(".sn-cassign");
+                if (r === 2) {
+                    assignTd.innerHTML =
+                        '<span class="muted small" title="Role not assignable from web UI">-</span>';
+                } else if (!assignTd.querySelector(".role-btns")) {
+                    assignTd.innerHTML = assignFormHtml(id, r);
+                } else {
+                    const isBle = r === 1;
+                    assignTd
+                        .querySelector('[data-role="wifi"]')
+                        .classList.toggle("role-btn-active", !isBle);
+                    assignTd
+                        .querySelector('[data-role="ble"]')
+                        .classList.toggle("role-btn-active", isBle);
+                }
+                tr.querySelector(".sn-cid").textContent = id;
+                tr.querySelector(".sn-cmac code").textContent = s.mac || "";
+                tr.querySelector(".sn-crole").textContent = roleLabel(
+                    s.role != null ? Number(s.role) : 0,
+                );
+                const band =
+                    s.assigned_band != null ? Number(s.assigned_band) : 0;
+                const pinSrv = pinServerVal(s.pinned_channel);
+                const prevSn = SNIFFER_SERVER[id];
+                const fiveGzCap = s.five_ghz_capable ? true : false;
+                const bandTd = tr.querySelector(".sn-cband");
+                const isManual = manualBandMode();
+                if (isManual) {
+                    const domBand = bandTd.dataset.snifferId
+                        ? snifferBandDomValue(bandTd)
+                        : band;
+                    const updateBand =
+                        prevSn === undefined ||
+                        domBand === (prevSn.assigned_band ?? 0);
+                    if (
+                        bandTd.dataset.mode !== "manual" ||
+                        !bandTd.dataset.snifferId
+                    ) {
+                        bandTd.dataset.mode = "manual";
+                        bandTd.dataset.snifferId = id;
+                        bandTd.innerHTML = bandRadiosHtml(
+                            id,
+                            band,
+                            fiveGzCap,
+                        );
+                    } else if (updateBand) {
+                        bandTd.innerHTML = bandRadiosHtml(
+                            id,
+                            band,
+                            fiveGzCap,
+                        );
+                    } else {
+                        const fiveRadio = bandTd.querySelector(
+                            'input[value="2"]',
+                        );
+                        if (fiveRadio) {
+                            fiveRadio.disabled = !fiveGzCap;
+                        }
+                    }
+                    const pinTd = tr.querySelector(".sn-cpin");
+                    const domPin = pinTd.dataset.snifferId
+                        ? pinDomValue(pinTd)
+                        : pinSrv;
+                    const updatePin =
+                        prevSn === undefined ||
+                        domPin === (prevSn.pinned_channel ?? 0);
+                    if (!pinTd.dataset.snifferId) {
+                        pinTd.dataset.snifferId = id;
+                        pinTd.innerHTML = pinInputHtml(id, s.pinned_channel);
+                    } else if (
+                        updatePin &&
+                        document.activeElement !== pinTd.querySelector("input")
+                    ) {
+                        pinTd.innerHTML = pinInputHtml(id, s.pinned_channel);
+                    }
+                } else {
+                    bandTd.dataset.mode = "auto";
+                    delete bandTd.dataset.snifferId;
+                    bandTd.innerHTML = "";
+                    const pinTd = tr.querySelector(".sn-cpin");
+                    delete pinTd.dataset.snifferId;
+                    pinTd.innerHTML = "";
+                }
+                SNIFFER_SERVER[id] = {
+                    assigned_band: band,
+                    pinned_channel: pinSrv,
+                };
+                tr.querySelector(".sn-cbucket").innerHTML = bucketHtml(
+                    s.assigned_channels,
+                );
+                tr.querySelector(".sn-cble").textContent = s.ble_capable
+                    ? "yes"
+                    : "no";
+                tr.querySelector(".sn-cstate").textContent = stateLabel(
+                    s.state != null ? Number(s.state) : 0,
+                );
+                const bootId =
+                    s.sniffer_boot_id != null ? Number(s.sniffer_boot_id) : 0;
+                tr.querySelector(".sn-cboot code").textContent =
+                    bootId > 0 ? "0x" + bootId.toString(16) : "-";
+                tr.querySelector(".sn-creboot").textContent =
+                    s.reboot_count != null ? String(s.reboot_count) : "0";
+                tr.querySelector(".sn-cseen").textContent = lastSeenAgo(
+                    nowMs,
+                    s.last_seen_ms,
+                );
+                const cpu =
+                    s.cpu_load_pct != null ? Number(s.cpu_load_pct) : null;
+                tr.querySelector(".sn-ccpu").textContent =
+                    cpu != null && !Number.isNaN(cpu) ? cpu + "%" : "-";
+                tr.querySelector(".sn-cheap").textContent = memLine(s);
+                const adoptTd = tr.querySelector(".sn-cadopt");
+                const ast =
+                    s.adoption_state != null ? Number(s.adoption_state) : 0;
+                adoptTd.innerHTML =
+                    '<span class="sn-adopt-label">' +
+                    adoptionLabel(ast) +
+                    "</span> " +
+                    adoptionActionsHtml(id, ast);
+                tr.classList.toggle(
+                    "sn-tr-stale",
+                    snifferIsQuietStale(nowMs, s.last_seen_ms),
+                );
+            }
+            const ordered = Array.from(
+                tbody.querySelectorAll("tr[data-sniffer-id]"),
+            ).sort(function (a, b) {
+                return (
+                    Number(a.dataset.snifferId) - Number(b.dataset.snifferId)
+                );
+            });
+            for (const tr of ordered) tbody.appendChild(tr);
+        }
+
+        function fillPlanForm(plan) {
+            if (!plan) return;
+            const dwellInp = document.getElementById("dwellInp");
+            const i24 = document.getElementById("i24");
+            const i5 = document.getElementById("i5");
+            const idfs = document.getElementById("idfs");
+            const ch24 = document.getElementById("ch24");
+            const ch5 = document.getElementById("ch5");
+            const ch5d = document.getElementById("ch5d");
+
+            // Only overwrite if the current DOM value matches the previous server snapshot
+            // (i.e. the user has not changed it).
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(dwellInp, PLAN_SERVER.dwell_ms)
+            )
+                dwellInp.value = plan.dwell_ms;
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(i24, PLAN_SERVER.include_2_4)
+            )
+                i24.checked = !!plan.include_2_4;
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(i5, PLAN_SERVER.include_5)
+            )
+                i5.checked = !!plan.include_5;
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(idfs, PLAN_SERVER.include_dfs)
+            )
+                idfs.checked = !!plan.include_dfs;
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(
+                    ch24,
+                    (PLAN_SERVER.channels_2_4 || []).join(","),
+                )
+            )
+                ch24.value = (plan.channels_2_4 || []).join(",");
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(ch5, (PLAN_SERVER.channels_5 || []).join(","))
+            )
+                ch5.value = (plan.channels_5 || []).join(",");
+            if (
+                PLAN_SERVER === null ||
+                domMatchesServer(
+                    ch5d,
+                    (PLAN_SERVER.channels_5_dfs || []).join(","),
+                )
+            )
+                ch5d.value = (plan.channels_5_dfs || []).join(",");
+            const mode = plan.band_mode || "auto";
+            const bandAuto = document.querySelector(
+                'input[name="band_mode"][value="auto"]',
+            );
+            const bandManual = document.querySelector(
+                'input[name="band_mode"][value="manual"]',
+            );
+            if (
+                PLAN_SERVER === null ||
+                (PLAN_SERVER.band_mode || "auto") === currentBandMode()
+            ) {
+                bandAuto.checked = mode !== "manual";
+                bandManual.checked = mode === "manual";
+            }
+            document.getElementById("planRev").textContent = plan.revision;
+            updateBandPinColumnVisibility();
+            const eff = plan.effective || {};
+            const hop = document.getElementById("hopCycle");
+            const hopMs = Number(eff.hop_cycle_ms || 0);
+            hop.textContent =
+                hopMs > 0
+                    ? "Estimated full hop cycle: " +
+                      (hopMs / 1000).toFixed(1) +
+                      " s" +
+                      " (slowest sniffer bucket * dwell)"
+                    : "No hopping sniffers currently scheduled.";
+        }
+
+        function gatherPlanForm() {
+            const sniffMap = {};
+            SNIFFER_CACHE.forEach(function (s) {
+                sniffMap[String(s.sniffer_id)] = s;
+            });
+            const sids = Array.from(
+                document.querySelectorAll("tr[data-sniffer-id]"),
+            ).map(function (tr) {
+                return tr.dataset.snifferId;
+            });
+            const band24 = [],
+                band5 = [],
+                pins = [];
+            const manual = manualBandMode();
+            for (const sid of sids) {
+                const tr = document.querySelector(
+                    'tr[data-sniffer-id="' + sid + '"]',
+                );
+                const sn = sniffMap[sid];
+                const role =
+                    sn && sn.role != null ? Number(sn.role) : 0;
+                if (manual && role !== 1) {
+                    const checked = tr.querySelector(
+                        '.sn-cband input[type="radio"]:checked',
+                    );
+                    let b = checked ? Number(checked.value) : 0;
+                    if (b !== 1 && b !== 2) b = 1;
+                    if (b === 1) band24.push(sid);
+                    else if (b === 2) band5.push(sid);
+                }
+                const pinInp = tr.querySelector(".sn-cpin input");
+                const pv = pinInp ? Number(pinInp.value || 0) : 0;
+                if (pv > 0) pins.push(sid + ":" + pv);
+            }
+            const body = new URLSearchParams();
+            body.set("band_mode", manual ? "manual" : "auto");
+            body.set(
+                "include_2_4",
+                document.getElementById("i24").checked ? "1" : "0",
+            );
+            body.set(
+                "include_5",
+                document.getElementById("i5").checked ? "1" : "0",
+            );
+            body.set(
+                "include_dfs",
+                document.getElementById("idfs").checked ? "1" : "0",
+            );
+            body.set(
+                "dwell_ms",
+                String(document.getElementById("dwellInp").value || "200"),
+            );
+            body.set(
+                "channels_2_4",
+                document.getElementById("ch24").value.trim(),
+            );
+            body.set("channels_5", document.getElementById("ch5").value.trim());
+            body.set(
+                "channels_5_dfs",
+                document.getElementById("ch5d").value.trim(),
+            );
+            if (manual) {
+                body.set("sniffers_2_4", band24.join(","));
+                body.set("sniffers_5", band5.join(","));
+                body.set("pins", pins.join(","));
+            }
+            return body;
+        }
+
+        async function saveChannelPlanPost() {
+            const body = gatherPlanForm();
+            const r = await fetch("/api/channel-plan", {
+                method: "POST",
+                body: body,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            });
+            const j = await r.json();
+            return { httpOk: r.ok, j: j };
+        }
+
+        function setPlanStatusFromSave(j) {
+            const status = document.getElementById("planStatus");
+            if (j && j.ok) {
+                status.textContent =
+                    "saved (revision " +
+                    j.revision +
+                    ")" +
+                    (j.sd_warning ? " SD warning: " + j.sd_warning : "");
+                status.className = j.sd_warning ? "err small" : "ok small";
+            } else {
+                status.textContent = "save failed";
+                status.className = "err small";
+            }
+        }
+
+        async function loadPlan() {
+            try {
+                const r = await fetch("/api/channel-plan", {
+                    cache: "no-store",
+                });
+                const j = await r.json();
+                PLAN_CACHE = j;
+                fillPlanForm(j);
+                PLAN_SERVER = { ...j };
+            } catch (e) {
+                document.getElementById("planStatus").textContent =
+                    "Failed to load /api/channel-plan";
+                document.getElementById("planStatus").className = "err small";
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const r = await fetch("/api/stats", { cache: "no-store" });
+                const j = await r.json();
+                const nowMs = j.now_ms != null ? j.now_ms : Date.now();
+                const sniffers = (j.sniffers || []).filter(function (s) {
+                    return s.sniffer_id;
+                });
+                SNIFFER_CACHE = sniffers;
+                syncSnifferRows(sniffers, nowMs);
+            } catch (e) {
+                const msg = document.getElementById("listMessage");
+                msg.style.display = "";
+                msg.className = "err";
+                msg.textContent = "Failed to load /api/stats";
+                document.getElementById("snifferScrollWrap").style.display =
+                    "none";
+            }
+        }
+
+        async function load() {
+            await Promise.all([loadStats(), loadPlan()]);
+        }
+
+        document
+            .getElementById("snifferTbody")
+            .addEventListener("click", async function (ev) {
+                const adoptBtn = ev.target.closest(
+                    ".sn-adopt-btn, .sn-adopt-remove",
+                );
+                if (adoptBtn) {
+                    const status = document.getElementById("status");
+                    const sid = adoptBtn.getAttribute("data-sid");
+                    const removing =
+                        adoptBtn.classList.contains("sn-adopt-remove");
+                    status.textContent = removing
+                        ? "removing sniffer..."
+                        : "adopting sniffer...";
+                    status.className = "muted";
+                    const body = new URLSearchParams();
+                    body.set("sniffer_id", sid);
+                    const path = removing
+                        ? "/sniffers/remove"
+                        : "/sniffers/adopt";
+                    try {
+                        const r = await fetch(path, {
+                            method: "POST",
+                            body: body,
+                        });
+                        const t = await r.text();
+                        status.textContent = r.ok
+                            ? t || "Done."
+                            : "Adopt/remove failed";
+                        status.className = r.ok ? "ok" : "err";
+                        if (r.ok) load();
+                    } catch (e) {
+                        status.textContent = "Network error";
+                        status.className = "err";
+                    }
+                    return;
+                }
+                const btn = ev.target.closest(".role-btns button[data-role]");
+                if (!btn) return;
+                const wrap = btn.closest(".role-btns");
+                if (!wrap) return;
+                const status = document.getElementById("status");
+                status.textContent = "assigning role...";
+                status.className = "muted";
+                const body = new URLSearchParams();
+                body.set("sniffer_id", wrap.dataset.sid);
+                body.set("role", btn.getAttribute("data-role"));
+                try {
+                    const r = await fetch("/sniffers/role", {
+                        method: "POST",
+                        body: body,
+                    });
+                    const t = await r.text();
+                    status.textContent = r.ok
+                        ? t || "Queued."
+                        : "Role request failed";
+                    status.className = r.ok ? "ok" : "err";
+                    if (r.ok) load();
+                } catch (e) {
+                    status.textContent = "Network error";
+                    status.className = "err";
+                }
+            });
+
+        document
+            .querySelectorAll("#planCard button[data-default]")
+            .forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    if (!PLAN_CACHE || !PLAN_CACHE.defaults) return;
+                    const which = btn.getAttribute("data-default");
+                    if (which === "5") {
+                        document.getElementById("ch5").value = (
+                            PLAN_CACHE.defaults.channels_5 || []
+                        ).join(",");
+                    } else if (which === "5_dfs") {
+                        document.getElementById("ch5d").value = (
+                            PLAN_CACHE.defaults.channels_5_dfs || []
+                        ).join(",");
+                    }
+                });
+            });
+
+        document
+            .querySelectorAll(".ch24-preset")
+            .forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    const preset = btn.getAttribute("data-ch24");
+                    if (preset === "1-11") {
+                        document.getElementById("ch24").value =
+                            "1,2,3,4,5,6,7,8,9,10,11";
+                    } else if (preset === "1,6,11") {
+                        document.getElementById("ch24").value = "1,6,11";
+                    }
+                });
+            });
+
+        document
+            .querySelectorAll('input[name="band_mode"]')
+            .forEach(function (inp) {
+                inp.addEventListener("change", function () {
+                    updateBandPinColumnVisibility();
+                    const nowMs = Date.now();
+                    syncSnifferRows(SNIFFER_CACHE, nowMs);
+                });
+            });
+
+        document
+            .getElementById("savePlan")
+            .addEventListener("click", async function () {
+                const status = document.getElementById("planStatus");
+                status.textContent = "saving...";
+                status.className = "muted small";
+                try {
+                    const plan = await saveChannelPlanPost();
+                    setPlanStatusFromSave(plan.j);
+                    if (plan.httpOk && plan.j && plan.j.ok) {
+                        SNIFFER_SERVER = {};
+                        await load();
+                    }
+                } catch (e) {
+                    status.textContent = "network error";
+                    status.className = "err small";
+                }
+            });
+
+        document
+            .getElementById("resetAll")
+            .addEventListener("click", async function () {
+                const status = document.getElementById("planStatus");
+                status.textContent = "resetting...";
+                status.className = "muted small";
+                try {
+                    const r = await fetch("/api/channel-plan/reset", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                    });
+                    const j = await r.json();
+                    if (j.ok) {
+                        status.textContent =
+                            "reset (revision " +
+                            j.revision +
+                            ")" +
+                            (j.sd_warning
+                                ? " SD warning: " + j.sd_warning
+                                : "");
+                        status.className = j.sd_warning
+                            ? "err small"
+                            : "ok small";
+                        SNIFFER_SERVER = {};
+                        await load();
+                    } else {
+                        status.textContent = "reset failed";
+                        status.className = "err small";
+                    }
+                } catch (e) {
+                    status.textContent = "network error";
+                    status.className = "err small";
+                }
+            });
+
+        document
+            .querySelector('.sa-nav a[href="/sniffers"]')
+            ?.classList.add("sa-nav-active");
+        load();
+        setInterval(load, 3000);
+    </script>
+</main>

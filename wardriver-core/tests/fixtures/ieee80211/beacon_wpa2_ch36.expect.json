@@ -1,0 +1,7 @@
+{
+  "bssid": "aa:bb:cc:dd:ee:36",
+  "ssid": "FiveG-Test",
+  "channel": 36,
+  "rssi": -62,
+  "auth": "wpa2"
+}

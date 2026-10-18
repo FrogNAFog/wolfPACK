@@ -1,0 +1,295 @@
+<main class="sa-page sa-wrap">
+  <h2 class="sa-title" style="margin-top:8px;font-size:1.1rem">Diagnostics</h2>
+  <p class="muted small">Full <code>/api/stats</code> snapshot (~1s refresh).</p>
+
+  <section class="card diag-section">
+    <h3>Control heap</h3>
+    <div class="diag-grid" id="diagMem"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>Firmware &amp; boot</h3>
+    <div class="diag-grid" id="diagBoot"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>GPS &amp; NMEA</h3>
+    <p class="muted small" style="margin:0 0 8px 0">
+    </p>
+    <div class="diag-grid" id="diagGps"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>SD &amp; writer</h3>
+    <div class="diag-grid" id="diagSd"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>WiGLE rows &amp; dedupe</h3>
+    <div class="diag-grid" id="diagCsv"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>Ingress &amp; batch drops</h3>
+    <div class="diag-grid" id="diagBatch"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>ESP-NOW &amp; promisc</h3>
+    <div class="diag-grid" id="diagEsp"></div>
+  </section>
+  <section class="card diag-section" id="diagWolfpackSection" style="display:none">
+    <h3>wolfPACK dump profiling</h3>
+    <div class="diag-grid" id="diagWolfpack"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>Queues &amp; pipeline</h3>
+    <div class="diag-grid" id="diagPipe"></div>
+  </section>
+  <section class="card diag-section">
+    <h3>Sniffers (detail)</h3>
+    <div id="diagSniffWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <p id="diagSniffEmpty" class="muted">No sniffers</p>
+      <table id="diagSniffTable" class="sn" style="display:none;width:100%">
+        <thead>
+          <tr><th>ID</th><th>MAC</th><th>Role</th><th>State</th><th>Boot</th><th>Reboots</th><th>WiFi fr</th><th>BLE fr</th><th>WiFi rows</th><th>BLE rows</th><th>WiFi reasm</th><th>BLE reasm</th><th>CPU %</th><th>Heap %</th><th>Heap free</th><th>WiFi bulk lost</th><th>BLE bulk lost</th><th>Queue</th><th>Dump</th><th>Post</th><th>Visit</th></tr>
+        </thead>
+        <tbody id="diagSniffTbody"></tbody>
+      </table>
+    </div>
+  </section>
+  <details class="card diag-section" style="margin-top:14px">
+    <summary style="cursor:pointer;color:var(--ui-accent-hot);font-weight:700">Raw JSON</summary>
+    <pre id="diagRaw" style="margin:10px 0 0;max-height:45vh;overflow:auto;font-size:0.72rem;background:var(--ui-ink);padding:10px;border-radius:8px"></pre>
+  </details>
+
+  <script>
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+    function row(k, v) {
+      return '<div class="diag-row"><span>' + esc(k) + '</span><code>' + esc(v) + '</code></div>';
+    }
+    function fill(el, pairs) {
+      el.innerHTML = pairs.map(p => row(p[0], p[1])).join('');
+    }
+    function pick(j, keys) {
+      return keys.map(k => {
+        let v = (j[k] === undefined || j[k] === null) ? '—' : j[k];
+        if (k === 'gps_rmc_rate_hz' || k === 'gps_hist_rate_hz') {
+          if (v !== '—') v = v + ' Hz';
+        } else if (k === 'gps_rmc_interval_ms') {
+          if (v !== '—') v = v + ' ms';
+        }
+        return [k, v];
+      });
+    }
+    function pickNested(j, keys) {
+      const d = j.diagnostics || {};
+      return keys.map(k => {
+        let v = j[k];
+        if (v === undefined || v === null) v = d[k];
+        if (v === undefined || v === null) v = '—';
+        return [k, v];
+      });
+    }
+    const SNIFFER_QUIET_STALE_MS = 20000;
+    function snifferIsQuietStale(nowMs, lastMs) {
+      if (!lastMs) return true;
+      const d = nowMs - Number(lastMs);
+      if (d < 0 || d > 86400000) return true;
+      return d >= SNIFFER_QUIET_STALE_MS;
+    }
+    function snifferActivityLabel(roleWire, stateWire) {
+      const rw = Number(roleWire);
+      const st = Number(stateWire);
+      if (Number.isNaN(st)) return '—';
+      if (st === 0) return 'IDLE';
+      if (st === 1) return rw === 1 ? 'BLE scanning' : 'WiFi scanning';
+      if (st === 2) return 'ERROR';
+      if (st === 3) return 'RECON';
+      return 'ERROR';
+    }
+    async function tick() {
+      try {
+        const r = await fetch('/api/stats', { cache: 'no-store' });
+        const j = await r.json();
+        const nowMs = j.now_ms != null ? j.now_ms : Date.now();
+        fill(document.getElementById('diagMem'), pick(j, [
+          'control_mem_heap_avail_pct','control_mem_heap_free_bytes','control_mem_heap_total_bytes',
+          'control_cpu_load_pct',
+          'min_free_internal_heap_bytes','min_free_spiram_heap_bytes','soc_temp_c'
+        ]));
+        fill(document.getElementById('diagBoot'), pick(j, [
+          'firmware_version','firmware_role','board_profile','proto_version','esp_idf_version',
+          'uptime_ms','reset_reason','reset_reason_raw',
+          'channel_plan_revision',
+          'channel_plan_sd_load_fail','channel_plan_sd_save_fail'
+        ]));
+        fill(document.getElementById('diagGps'), pick(j, [
+          'gps_time_valid','wall_clock_trusted','gps_ok','gps_fix_ok','gps_uart_fresh','gps_rmc_fresh','gps_gga_fresh','gps_nav_fresh','gps_clock_stale','gps_data_fresh','gps_ok_to_log','gps_log_reason','gps_fix_quality','gps_hdop','gps_satellites',
+          'gps_rmc_rate_hz','gps_hist_rate_hz','gps_rmc_interval_ms','gps_rmc_last_parse_age_ms','gps_gga_last_parse_age_ms','gps_cross_check_rejects',
+          'gps_uart_last_rx_ms','gps_uart_rx_idle_ms','gps_uart_rx_bytes','gps_nmea_parsed','gps_nmea_checksum_bad',
+          'gps_nmea_rmc_count','gps_nmea_gga_count','gps_last_rmc_nav_valid',
+          'gps_stale_events','gps_recovery_soft_attempts','gps_recovery_soft_ok','gps_recovery_hard_attempts','gps_recovery_hard_ok'
+        ]));
+        fill(document.getElementById('diagSd'), pick(j, [
+          'sd_mounted','sd_health_ok','sd_health_writer_last_ok_ms','sd_health_main_last_ok_ms','sd_health_fail_count','sd_health_last_fail_ms',
+          'sd_session_created','sd_append_us_last','sd_append_us_max','sd_writer_queue_full',
+          'sd_eager_open_requested','sd_eager_open_request_dropped','sd_eager_open_succeeded','sd_eager_open_failed',
+          'sd_cleanup_files_examined','sd_cleanup_files_deleted','sd_cleanup_files_errors',
+          'diag_log_lines_ok','diag_log_lines_err','diag_log_last_err_ms','diag_log_enabled'
+        ]));
+        fill(document.getElementById('diagCsv'), pick(j, [
+          'scan_allowed','csv_enqueue_allowed','fleet_management','wifi_scan_cycles','wifi_aps_seen_total','wifi_rows_written',
+          'wifi_rows_dropped_no_accuracy','wifi_rows_dropped_no_gps_match','wifi_rows_dropped_no_hdop','wifi_rows_dropped_gps_stale','ble_rows_dropped_gps_stale','wifi_rows_dropped_dedup',
+          'wifi_rows_dropped_denylist','wifi_rows_dropped_encode','wifi_rows_dropped_sd',
+          'geodeduper_allowed','geodeduper_suppressed','geodeduper_evictions',
+          'unique_wifi_aps','unique_ble_devices',
+          'mac_table_entries','mac_table_geo_active','mac_table_max_entries','mac_table_geo_slots_max','mac_table_row_evictions','mac_table_geo_releases',
+          'detection_last_channel','detection_last_detection_method',
+          'detection_alerts_rx',
+          'detection_disable_wifi_mask','detection_disable_ble_mask',
+          'detection_alerts_fired','ble_alerts_fired','mobile_surveillance_alerts_fired',
+          'mobile_surveillance_last_detection_method','mobile_surveillance_last_seen_ms',
+          'detection_followup_rows_written','detection_alerted_macs_tracked'
+        ]));
+        fill(document.getElementById('diagBatch'), pickNested(j, [
+          'ingress_unpack_fail_wifi','ingress_unpack_fail_ble',
+          'wifi_batches_dropped_fleet_hold','wifi_batches_dropped_home_geofence','wifi_batches_dropped_csv_gate',
+          'wifi_batches_dropped_wall_clock','wifi_batches_dropped_no_fix_timeline','wifi_batches_dropped_utc_encode',
+          'ble_batches_dropped_fleet_hold','ble_batches_dropped_home_geofence','ble_batches_dropped_csv_gate',
+          'ble_batches_dropped_wall_clock','ble_batches_dropped_no_fix_timeline','ble_batches_dropped_utc_encode'
+        ]));
+        fill(document.getElementById('diagEsp'), pick(j, [
+          'espnow_rx_dropped_queue_full','espnow_rx_dropped_mutex_busy','espnow_rx_dropped_disconnected','espnow_tx_failed',
+          'sniffer_ack_tx_failed','espnow_peer_mod_attempts','espnow_peer_mod_failed','promisc_rx_dropped_queue_full',
+          'espnow_rx_dropped_oversized','sniffers_overflow','fleet_max_sniffers',
+          'peer_pool_join','peer_pool_evict','peer_pool_cap','peer_pool_transport_end','peer_pool_grace',
+          'post_dump_done_tx','post_dump_done_tx_fail',
+          'time_sync_ping_tx','time_sync_pong_rx','time_sync_rtt_reject','time_sync_rtt_skipped_not_due',
+          'sniffer_watchdog_recover','sniffer_watchdog_reboot'
+        ]).concat(pickNested(j, [
+          'sniffer_wardrive_suppressed_skips'
+        ])));
+        const wolfpackSection = document.getElementById('diagWolfpackSection');
+        const hasWolfpack = j.wolfpack_dump_samples !== undefined;
+        if (wolfpackSection) wolfpackSection.style.display = hasWolfpack ? '' : 'none';
+        if (hasWolfpack) {
+          fill(document.getElementById('diagWolfpack'), pick(j, [
+            'peer_join_waiters','peer_slots_free',
+            'wolfpack_dump_samples',
+            'wolfpack_queue_ms_avg','wolfpack_queue_ms_max',
+            'wolfpack_bulk_xfer_ms_avg','wolfpack_bulk_xfer_ms_max',
+            'peer_join_nack_tx','peer_join_queue_expire','peer_visit_arm_timeout'
+          ]));
+        }
+        fill(document.getElementById('diagPipe'), pick(j, [
+          'sniffer_last_abort_pressure',
+          'espnow_rx_queue_inflight','espnow_rx_queue_hwm','promisc_rx_queue_inflight','promisc_rx_queue_hwm',
+          'control_ingest_stack_bytes','control_ingest_worker_batches','control_ingest_frames_drained',
+          'sd_writer_queue_inflight','sd_writer_queue_hwm',
+          'dedup_wifi_size','dedup_ble_size','mac_table_entries','mac_table_geo_active',
+          'reasm_wifi_size','reasm_ble_size','reasm_overflow_evictions',
+          'control_loop_overruns','control_loop_frames_drained_last'
+        ]).concat(pickNested(j, [
+          'control_stage_ingress','control_stage_dedup','control_stage_reasm',
+          'control_stage_row_encode','control_denylist_lock_slow'
+        ])));
+        const sn = (j.sniffers || []).filter(function (s) { return s.sniffer_id; });
+        const wrap = document.getElementById('diagSniffWrap');
+        const tbody = document.getElementById('diagSniffTbody');
+        const tbl = document.getElementById('diagSniffTable');
+        const emptyEl = document.getElementById('diagSniffEmpty');
+        const prevScroll = wrap.scrollLeft;
+        if (sn.length === 0) {
+          tbody.innerHTML = '';
+          tbl.style.display = 'none';
+          emptyEl.style.display = '';
+        } else {
+          emptyEl.style.display = 'none';
+          tbl.style.display = 'table';
+          const want = new Set(sn.map(function (s) { return String(s.sniffer_id); }));
+          for (const tr of Array.from(tbody.querySelectorAll('tr[data-sniffer-id]'))) {
+            if (!want.has(tr.dataset.snifferId)) tr.remove();
+          }
+          function ensureDiagRow(snifferId) {
+            let tr = tbody.querySelector('tr[data-sniffer-id="' + snifferId + '"]');
+            if (tr) return tr;
+            tr = document.createElement('tr');
+            tr.dataset.snifferId = String(snifferId);
+            tr.innerHTML =
+              '<td class="d-sn-id"></td>' +
+              '<td class="d-sn-mac"><code></code></td>' +
+              '<td class="d-sn-role"></td>' +
+              '<td class="d-sn-state"></td>' +
+              '<td class="d-sn-boot"><code></code></td>' +
+              '<td class="d-sn-reboot"></td>' +
+              '<td class="d-sn-wifi-fr"></td>' +
+              '<td class="d-sn-ble-fr"></td>' +
+              '<td class="d-sn-wifi-rows"></td>' +
+              '<td class="d-sn-ble-rows"></td>' +
+              '<td class="d-sn-wifi-reasm"></td>' +
+              '<td class="d-sn-ble-reasm"></td>' +
+              '<td class="d-sn-cpu"></td>' +
+              '<td class="d-sn-hp"></td>' +
+              '<td class="d-sn-hf"></td>' +
+              '<td class="d-sn-wifi-bulk-lost"></td>' +
+              '<td class="d-sn-ble-bulk-lost"></td>' +
+              '<td class="d-sn-dump-queue"></td>' +
+              '<td class="d-sn-dump-bulk-xfer"></td>' +
+              '<td class="d-sn-dump-post"></td>' +
+              '<td class="d-sn-dump-visit"></td>';
+            tbody.appendChild(tr);
+            return tr;
+          }
+          const sorted = sn.slice().sort(function (a, b) {
+            return Number(a.sniffer_id) - Number(b.sniffer_id);
+          });
+          for (const s of sorted) {
+            const id = String(s.sniffer_id);
+            const tr = ensureDiagRow(id);
+            const rwRaw = Number(s.role);
+            const rw = Number.isNaN(rwRaw) ? 0 : rwRaw;
+            const stRaw = Number(s.state);
+            const stv = Number.isNaN(stRaw) ? 0 : stRaw;
+            const role = (rw === 2) ? '—' : ((rw === 1) ? 'BLE' : 'WiFi');
+            const st = snifferActivityLabel(rw, stv);
+            tr.querySelector('.d-sn-id').textContent = id;
+            tr.querySelector('.d-sn-mac code').textContent = s.mac || '';
+            tr.querySelector('.d-sn-role').textContent = role;
+            tr.querySelector('.d-sn-state').textContent = st;
+            const bootId = s.sniffer_boot_id != null ? Number(s.sniffer_boot_id) : 0;
+            tr.querySelector('.d-sn-boot code').textContent = bootId > 0 ? '0x' + bootId.toString(16) : '-';
+            tr.querySelector('.d-sn-reboot').textContent = s.reboot_count != null ? String(s.reboot_count) : '0';
+            tr.querySelector('.d-sn-wifi-fr').textContent = s.wifi_frag_batches != null ? String(s.wifi_frag_batches) : '';
+            tr.querySelector('.d-sn-ble-fr').textContent = s.ble_frag_batches != null ? String(s.ble_frag_batches) : '';
+            tr.querySelector('.d-sn-wifi-rows').textContent = s.wifi_rows_enqueued != null ? String(s.wifi_rows_enqueued) : '';
+            tr.querySelector('.d-sn-ble-rows').textContent = s.ble_rows_enqueued != null ? String(s.ble_rows_enqueued) : '';
+            tr.querySelector('.d-sn-wifi-reasm').textContent = s.wifi_reasm_dropped != null ? String(s.wifi_reasm_dropped) : '';
+            tr.querySelector('.d-sn-ble-reasm').textContent = s.ble_reasm_dropped != null ? String(s.ble_reasm_dropped) : '';
+            tr.querySelector('.d-sn-cpu').textContent = s.cpu_load_pct != null ? String(s.cpu_load_pct) : '';
+            tr.querySelector('.d-sn-hp').textContent = s.mem_heap_avail_pct != null ? String(s.mem_heap_avail_pct) : '';
+            tr.querySelector('.d-sn-hf').textContent = s.mem_heap_free != null ? String(s.mem_heap_free) : '';
+            tr.querySelector('.d-sn-wifi-bulk-lost').textContent = s.wifi_bulk_lost_cycles != null ? String(s.wifi_bulk_lost_cycles) : '';
+            tr.querySelector('.d-sn-ble-bulk-lost').textContent = s.ble_bulk_lost_cycles != null ? String(s.ble_bulk_lost_cycles) : '';
+            const fmtDumpMs = function (v) {
+              const n = Number(v);
+              return (v != null && n > 0) ? String(n) : '—';
+            };
+            tr.querySelector('.d-sn-dump-queue').textContent = fmtDumpMs(s.last_dump_queue_ms);
+            tr.querySelector('.d-sn-dump-bulk-xfer').textContent = fmtDumpMs(s.last_dump_bulk_xfer_ms);
+            tr.querySelector('.d-sn-dump-post').textContent = fmtDumpMs(s.last_dump_post_ms);
+            tr.querySelector('.d-sn-dump-visit').textContent = fmtDumpMs(s.last_dump_visit_ms);
+            tr.classList.toggle('sn-tr-stale', snifferIsQuietStale(nowMs, s.last_seen_ms));
+          }
+          const ordered = Array.from(tbody.querySelectorAll('tr[data-sniffer-id]')).sort(function (a, b) {
+            return Number(a.dataset.snifferId) - Number(b.dataset.snifferId);
+          });
+          for (const tr of ordered) tbody.appendChild(tr);
+        }
+        wrap.scrollLeft = prevScroll;
+        document.getElementById('diagRaw').textContent = JSON.stringify(j, null, 2);
+      } catch (e) { console.warn('wolfpack: diagnostics stats poll failed', e); }
+    }
+    document.querySelector('.sa-nav a[href="/diagnostics"]')?.classList.add('sa-nav-active');
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</main>

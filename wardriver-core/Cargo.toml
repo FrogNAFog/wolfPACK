@@ -1,0 +1,18 @@
+[package]
+name = "wardriver-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+anyhow = "1"
+heapless = "0.8"
+indexmap = "2.7"
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+wardriver-proto = { path = "../wardriver-proto" }
+
+[dev-dependencies]
+serde_json = "1"

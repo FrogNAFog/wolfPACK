@@ -1,0 +1,58 @@
+<main class="sa-page sa-wrap">
+    <h1 class="sa-title" style="font-size:1.2rem;margin-bottom:8px">Sounds</h1>
+    <p class="small"><a href="/">Fleet</a> · <a href="/setup">Setup</a> · <a href="/uploads">Uploads</a></p>
+    <p class="small">Uncheck a box to silence that event's buzzer only.</p>
+
+    <div id="flash-msg"></div>
+
+    <form method="post" action="/sounds/save" autocomplete="off">
+      <section>
+        <h2>Enable buzzer</h2>
+        <p class="small"><label><input type="checkbox" id="snd_all" name="snd_all" value="1" /> Enable all sounds</label></p>
+        <ul class="small" style="list-style:none;padding:0">
+          <li><label><input type="checkbox" id="snd_boot" name="snd_boot" value="1" /> Boot</label></li>
+          <li><label><input type="checkbox" id="snd_upload_start" name="snd_upload_start" value="1" /> Upload started (WiGLE / wdgwars)</label></li>
+          <li><label><input type="checkbox" id="snd_upload_done" name="snd_upload_done" value="1" /> Upload finished</label></li>
+          <li><label><input type="checkbox" id="snd_gps_fix" name="snd_gps_fix" value="1" /> GPS fix acquired</label></li>
+          <li><label><input type="checkbox" id="snd_detection" name="snd_detection" value="1" /> Detection alert</label></li>
+          <li><label><input type="checkbox" id="snd_surveillance" name="snd_surveillance" value="1" /> Mobile surveillance (Axon / i-PRO)</label></li>
+          <li><label><input type="checkbox" id="snd_ssid_watch" name="snd_ssid_watch" value="1" /> SSID watch (beacon match)</label></li>
+        </ul>
+        <p><button type="submit">Save sound preferences</button></p>
+      </section>
+    </form>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* Flash banner from redirect query (?msg=ok|err&detail=…). */
+  (function showFlashFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var msg = params.get('msg');
+    var detail = params.get('detail') || '';
+    var el = document.getElementById('flash-msg');
+    if (!el || !msg) return;
+    var p = document.createElement('p');
+    p.className = (msg === 'ok') ? 'ok' : 'err';
+    p.textContent = detail || (msg === 'ok' ? 'Saved.' : 'Error.');
+    el.appendChild(p);
+  })();
+
+  /* Hydrate checkboxes from alert_sound_mask (bit0..bit6). */
+  fetch('/api/stats')
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var mask = (j.alert_sound_mask != null) ? Number(j.alert_sound_mask) : 0x7F;
+      document.getElementById('snd_boot').checked = (mask & (1 << 0)) !== 0;
+      document.getElementById('snd_upload_start').checked = (mask & (1 << 1)) !== 0;
+      document.getElementById('snd_upload_done').checked = (mask & (1 << 2)) !== 0;
+      document.getElementById('snd_gps_fix').checked = (mask & (1 << 3)) !== 0;
+      document.getElementById('snd_detection').checked = (mask & (1 << 4)) !== 0;
+      document.getElementById('snd_surveillance').checked = (mask & (1 << 5)) !== 0;
+      document.getElementById('snd_ssid_watch').checked = (mask & (1 << 6)) !== 0;
+      document.getElementById('snd_all').checked = (mask === 0x7F);
+    })
+    .catch(function (e) { console.warn('sounds: stats hydrate failed', e); });
+
+  document.querySelector('.sa-nav a[href="/sounds"]')?.classList.add('sa-nav-active');
+});
+</script>
+</main>

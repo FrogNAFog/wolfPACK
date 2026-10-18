@@ -1,0 +1,24 @@
+[package]
+name = "wardriver-shared"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+control = []
+sniffer = []
+
+[dependencies]
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-stats = { path = "../wardriver-stats" }
+log = "0.4"
+anyhow = "1"
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"] }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"] }
+
+[build-dependencies]
+embuild = "0.33"
+toml = "0.8"

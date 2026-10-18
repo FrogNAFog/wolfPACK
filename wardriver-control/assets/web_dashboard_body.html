@@ -1,0 +1,436 @@
+<main class="sa-page sa-wrap">
+  <p class="muted small" style="margin-top:4px">Live stats</p>
+  <div id="cfgBanner" class="banner"></div>
+  <p id="wgNote" class="muted small" style="margin-top:6px"></p>
+
+  <section class="dashboard-glance__grid" aria-label="Fleet status">
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">Sniffers</div>
+      <div class="dashboard-glance__card-value" id="glanceSniffers">—</div>
+      <div class="dashboard-glance__card-foot"><a href="/sniffers">Manage fleet</a></div>
+    </div>
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">GPS fix</div>
+      <div class="dashboard-glance__card-value dashboard-glance__card-value--sm" id="glanceGpsFix">—</div>
+      <div class="dashboard-glance__card-foot" id="glanceGpsDetail">—</div>
+    </div>
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">CSV gate</div>
+      <div class="dashboard-glance__card-value dashboard-glance__card-value--sm" id="glanceCsvGate">—</div>
+      <div class="dashboard-glance__card-foot" id="glanceCsvDetail">—</div>
+    </div>
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">WiGLE rows</div>
+      <div class="dashboard-glance__card-value" id="glanceWigleRows">—</div>
+    </div>
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">Unique MACs</div>
+      <div class="dashboard-glance__card-value dashboard-glance__card-value--sm" id="glanceUniqueMacs">—</div>
+      <div class="dashboard-glance__card-foot" id="glanceUniqueBle">—</div>
+    </div>
+    <div class="dashboard-glance__card">
+      <div class="dashboard-glance__card-label">Fleet</div>
+      <div class="dashboard-glance__card-value dashboard-glance__card-value--sm" id="glanceFleet">—</div>
+      <div class="dashboard-glance__card-foot" id="glanceFleetDetail">—</div>
+    </div>
+  </section>
+
+  <section class="card" id="wolfpackHealthCard" style="display:none;margin-top:12px">
+    <div class="k">wolfPACK</div>
+    <div class="grid" style="margin-top:8px">
+      <div class="card">
+        <div class="k">ESP-NOW peers</div>
+        <div class="v" id="wolfpackPeerCount">—</div>
+      </div>
+      <div class="card">
+        <div class="k">Join queue</div>
+        <div class="v" id="wolfpackQueueWaiters">—</div>
+      </div>
+    </div>
+    <p class="muted small" id="wolfpackHealthFoot" style="margin:8px 0 0 0"></p>
+  </section>
+
+  <p id="fwRevLine" class="muted small"></p>
+
+  <h2>Detections</h2>
+  <div id="detCard" class="card detection-card" style="margin-top:8px">
+    <p class="muted small" style="margin:0 0 8px 0">
+      <a href="/detections"><strong>Detections</strong></a>
+      <span class="muted"> · </span><a href="/capture">Capture</a>
+    </p>
+    <div class="grid">
+      <div class="card"><div class="k">WiFi alerts</div><div class="v" id="wifi_af">-</div></div>
+      <div class="card"><div class="k">BLE alerts</div><div class="v" id="ble_af">-</div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="k">Last alert</div>
+      <p class="muted small" style="margin:6px 0 0 0">
+        Type: <span id="alrt_type">—</span> · MAC: <code id="alrt_src">-</code> · last seen: <span id="alrt_ago">-</span> · sniffer: <span id="alrt_sid">-</span>
+      </p>
+      <p class="muted small" style="margin:6px 0 0 0">
+        Method: <span id="alrt_method">—</span>
+      </p>
+      <p id="alrt_wifi_extra" class="muted small" style="margin:6px 0 0 0;display:none">
+        Wildcard: <span id="alrt_wc">-</span> · channels: <span id="alrt_distinct">-</span>
+      </p>
+      <p class="small" style="margin-top:8px">
+        <button type="button" id="btnIgnoreLastMac">Ignore last alert MAC</button>
+        <span class="muted small" style="margin-left:6px">SD · <a href="/detections#sec-detection-ignore">Detection ignore</a></span>
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="k">Fleet mode</div>
+    <p class="muted small" style="margin:8px 0 0 0">
+      <b>Pause</b> stops sniffer scanning. <b>Wardrive</b> resumes scanning; WiGLE logging additionally needs GPS, time sync, and (if configured) leaving the home zone.
+    </p>
+    <p style="margin-top:10px">
+      <button type="button" id="btnMgmt">Pause</button>
+      <button type="button" id="btnWar">Wardrive</button>
+    </p>
+  </div>
+
+  <p class="muted small" style="margin-top:20px">
+    SoftAP <code>wolfPACK</code> / <code>deflock123</code> · <code>http://192.168.71.1/</code>
+  </p>
+
+  <script>
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+    const ALERT_HIGHLIGHT_WINDOW_MS = 30000;
+    /** Pack-aligned labels; status tags from pack docs/DETECTION_METHODS.md */
+    function detectionMethodLabel(dm) {
+      if (dm === 1) return 'wildcard probe + Flock OUI (deprecated)';
+      if (dm === 2) return 'wildcard probe + IE signature + Flock OUI';
+      if (dm === 3) return 'wildcard probe + IE signature (any MAC)';
+      if (dm === 4) return 'Axon OUI (mobile surveillance Wi-Fi)';
+      if (dm === 5) return 'i-PRO OUI (probe-request Wi-Fi)';
+      if (dm === 32) return 'Xuntong manufacturer ID (deprecated)';
+      if (dm === 33) return 'advertised name keyword (deprecated)';
+      if (dm === 34) return 'MAC OUI (deprecated)';
+      if (dm === 35) return 'Axon OUI (mobile surveillance)';
+      if (dm === 36) return 'i-PRO OUI (mobile surveillance)';
+      if (dm >= 32 && dm <= 63) return 'BLE method ' + dm;
+      return 'unknown (' + dm + ')';
+    }
+    function isMobileSurveillanceMethod(dm) {
+      return dm === 4 || dm === 5 || dm === 35 || dm === 36;
+    }
+    function isMobileSurveillanceLastAlert(j) {
+      return bannerAlertKind(j) === 'msrv';
+    }
+    function isSsidWatchLastAlert(j) {
+      return bannerAlertKind(j) === 'ssid_watch';
+    }
+    /** Which alert type to show in the banner (most recent `last_seen_ms` wins). */
+    function bannerAlertKind(j) {
+      const fllsm = (j.detection_last_seen_ms != null) ? Number(j.detection_last_seen_ms) : 0;
+      const mslsm = (j.mobile_surveillance_last_seen_ms != null) ? Number(j.mobile_surveillance_last_seen_ms) : 0;
+      const swlsm = (j.ssid_watch_last_seen_ms != null) ? Number(j.ssid_watch_last_seen_ms) : 0;
+      const mdm = (j.mobile_surveillance_last_detection_method != null) ? Number(j.mobile_surveillance_last_detection_method) : null;
+      if (swlsm >= fllsm && swlsm >= mslsm && swlsm > 0) return 'ssid_watch';
+      if (mslsm >= fllsm && mslsm >= swlsm && mslsm > 0 && isMobileSurveillanceMethod(mdm)) return 'msrv';
+      if (fllsm > 0) return 'detection';
+      return 'none';
+    }
+    /** Banner subtitle from /api/stats; branches on `detection_last_signal_kind` (0=WiFi, 1=BLE). */
+    function detectionAlertTriggerText(j) {
+      if (isSsidWatchLastAlert(j)) {
+        const ssid = (j.ssid_watch_last_ssid != null) ? String(j.ssid_watch_last_ssid) : '—';
+        return 'SSID watch · beacon · ' + ssid;
+      }
+      if (isMobileSurveillanceLastAlert(j)) {
+        const mdm = (j.mobile_surveillance_last_detection_method != null) ? Number(j.mobile_surveillance_last_detection_method) : null;
+        const vendor = (mdm === 5 || mdm === 36) ? 'I-PRO' : 'AXON';
+        return 'Detection · MOBILE SURVEILLANCE · ' + vendor;
+      }
+      const sk = (j.detection_last_signal_kind != null) ? Number(j.detection_last_signal_kind) : null;
+      const dm = (j.detection_last_detection_method != null) ? Number(j.detection_last_detection_method) : null;
+      if (sk === 1) {
+        const cid = (j.detection_last_ble_company_id != null) ? Number(j.detection_last_ble_company_id) : 0;
+        const extra = (dm === 32 && cid > 0) ? (' · company 0x' + cid.toString(16)) : '';
+        const ml = (dm != null && !Number.isNaN(dm)) ? detectionMethodLabel(dm) + extra : '—';
+        return 'Detection · BLE · ' + ml;
+      }
+      if (sk === 0) {
+        if (dm != null && !Number.isNaN(dm)) return 'Detection · WiFi · ' + detectionMethodLabel(dm);
+        return 'Detection · WiFi';
+      }
+      if (dm != null && !Number.isNaN(dm)) return 'Detection · ' + detectionMethodLabel(dm);
+      return 'Detection';
+    }
+    let detectionPrevAlerts = null;
+    let detectionPrevBleAlerts = null;
+    let detectionPrevMobileSurvAlerts = null;
+    let detectionPrevSsidWatchAlerts = null;
+    let detectionHighlightUntilMs = 0;
+    function alertHighlightActive(nowMs) { return nowMs < detectionHighlightUntilMs; }
+    function syncDetectionAlertUi(nowMs, j) {
+      const ban = document.getElementById('detectionAlertBanner');
+      const card = document.getElementById('detCard');
+      const active = alertHighlightActive(nowMs);
+      if (!ban || !card) return;
+      if (active) {
+        ban.style.display = 'block';
+        const ssidWatch = isSsidWatchLastAlert(j);
+        const msrv = isMobileSurveillanceLastAlert(j);
+        const mac = ssidWatch
+          ? ((j.ssid_watch_last_bssid != null) ? String(j.ssid_watch_last_bssid) : '—')
+          : msrv
+          ? ((j.mobile_surveillance_last_src != null) ? String(j.mobile_surveillance_last_src) : '—')
+          : ((j.detection_last_src != null) ? String(j.detection_last_src) : '—');
+        const sid = ssidWatch
+          ? ((j.ssid_watch_last_sniffer_id != null) ? String(j.ssid_watch_last_sniffer_id) : '—')
+          : msrv
+          ? ((j.mobile_surveillance_last_sniffer_id != null) ? String(j.mobile_surveillance_last_sniffer_id) : '—')
+          : ((j.detection_last_sniffer_id != null) ? String(j.detection_last_sniffer_id) : '—');
+        const trig = detectionAlertTriggerText(j);
+        const headline = ssidWatch ? 'SSID watch alert' : (msrv ? 'Mobile surveillance alert' : 'Detection alert');
+        const detail = ssidWatch
+          ? 'Beacon matched your watchlist.'
+          : (msrv ? 'Possible mobile surveillance device.' : 'Possible Flock camera behavior.');
+        ban.innerHTML = '<strong>' + esc(headline) + '</strong><p class="detection-alert-sub">' + esc(trig) +
+          '. ' + esc(detail) + ' MAC <code>' +
+          esc(mac) + '</code> · sniffer ' + esc(sid) + '</p>';
+        card.classList.add('detection-alert-active');
+        document.body.classList.add('detection-banner-active');
+      } else {
+        ban.style.display = 'none';
+        ban.innerHTML = '';
+        card.classList.remove('detection-alert-active');
+        document.body.classList.remove('detection-banner-active');
+      }
+    }
+    async function detectionIgnoreMac(mac) {
+      const t = (mac || '').trim();
+      if (!t || t === '—' || t === '-') return;
+      try {
+        await fetch('/api/detection-ignore-mac', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'mac=' + encodeURIComponent(t),
+        });
+        tick();
+      } catch (e) { console.warn(e); }
+    }
+    function lastSeenAgo(nowMs, lastMs) {
+      if (!lastMs) return '-';
+      const d = nowMs - Number(lastMs);
+      if (d < 0 || d > 86400000) return '-';
+      if (d < 1500) return 'just now';
+      const sec = Math.floor(d / 1000);
+      if (sec < 60) return sec + 's ago';
+      const min = Math.floor(sec / 60);
+      if (min < 120) return min + 'm ago';
+      return Math.floor(min / 60) + 'h ago';
+    }
+    /** Matches control `ACTIVE_WINDOW_MS` / fleet “quiet” threshold (~20s without ACK). */
+    const SNIFFER_QUIET_STALE_MS = 20000;
+    function snifferIsQuietStale(nowMs, lastMs) {
+      if (!lastMs) return true;
+      const d = nowMs - Number(lastMs);
+      if (d < 0 || d > 86400000) return true;
+      return d >= SNIFFER_QUIET_STALE_MS;
+    }
+    /** True when /api/stats flag is 1 or boolean true. */
+    function statFlag(v) {
+      return v === 1 || v === true;
+    }
+    /** Count sniffers with fresh ACK (within SNIFFER_QUIET_STALE_MS). */
+    function activeSnifferCount(j, nowMs) {
+      const list = (j.sniffers || []).filter(function (s) { return s.sniffer_id; });
+      let n = 0;
+      for (const s of list) {
+        if (!snifferIsQuietStale(nowMs, s.last_seen_ms)) n++;
+      }
+      return n;
+    }
+    /** Satellites + HDOP subline for GPS card (ASCII, OLED-style). */
+    function gpsDetailLine(j) {
+      const parts = [];
+      const sats = (j.gps_satellites != null && j.gps_satellites !== '') ? Number(j.gps_satellites) : null;
+      if (sats != null && !Number.isNaN(sats)) parts.push(sats + ' sats');
+      const hdop = (j.gps_hdop != null && j.gps_hdop !== '') ? String(j.gps_hdop) : null;
+      if (hdop) parts.push('HDOP ' + hdop);
+      if (parts.length) return parts.join(' - ');
+      return statFlag(j.gps_fix_ok) ? 'Fix OK' : 'No fix';
+    }
+    /** Blockers when csv_enqueue_allowed is false; mirrors fleet_loop.rs gate order. */
+    function csvGateBlockers(j) {
+      const blockers = [];
+      if (statFlag(j.fleet_management)) blockers.push('Paused');
+      if (statFlag(j.recon_hold)) blockers.push('Capture');
+      if (!statFlag(j.wall_clock_trusted)) blockers.push('Clock not synced');
+      if (statFlag(j.home_geofence_suppressing)) blockers.push('Inside home zone');
+      const gpsReady = statFlag(j.gps_ok) || statFlag(j.gps_hist_drain_ok);
+      if (!gpsReady) {
+        const reason = (j.gps_log_reason != null && j.gps_log_reason !== '') ? String(j.gps_log_reason) : 'GPS not ready';
+        blockers.push(reason);
+      }
+      return blockers;
+    }
+    /** Fleet mode label (same logic as old chipFleetStateV). */
+    function fleetModeLabel(j) {
+      if (statFlag(j.fleet_management)) return 'Paused';
+      const scanOn = statFlag(j.scan_allowed);
+      const logOn = statFlag(j.csv_enqueue_allowed);
+      if (scanOn) return logOn ? 'Wardriving' : 'Scan only';
+      return 'Idle';
+    }
+    /** Update all glance cards from /api/stats payload. */
+    function syncGlanceCards(j, nowMs) {
+      const snActive = activeSnifferCount(j, nowMs);
+      const snMax = (j.fleet_max_sniffers != null) ? Number(j.fleet_max_sniffers) : 0;
+      document.getElementById('glanceSniffers').textContent =
+        (snMax > 0) ? (String(snActive) + ' / ' + String(snMax)) : String(snActive);
+      const gpsFixEl = document.getElementById('glanceGpsFix');
+      const gpsOk = statFlag(j.gps_fix_ok);
+      gpsFixEl.textContent = gpsOk ? 'Yes' : 'No';
+      gpsFixEl.classList.toggle('ok', gpsOk);
+      gpsFixEl.classList.toggle('err', !gpsOk);
+      document.getElementById('glanceGpsDetail').textContent = gpsDetailLine(j);
+      const csvOpen = statFlag(j.csv_enqueue_allowed);
+      const csvGateEl = document.getElementById('glanceCsvGate');
+      csvGateEl.textContent = csvOpen ? 'Open' : 'Closed';
+      csvGateEl.classList.toggle('ok', csvOpen);
+      csvGateEl.classList.toggle('err', !csvOpen);
+      const csvDetailEl = document.getElementById('glanceCsvDetail');
+      csvDetailEl.textContent = csvOpen ? 'Ready' : csvGateBlockers(j).join(' · ');
+      document.getElementById('glanceWigleRows').textContent =
+        (j.wifi_rows_written != null) ? String(j.wifi_rows_written) : '—';
+      document.getElementById('glanceUniqueMacs').textContent =
+        (j.unique_wifi_aps != null) ? ('WiFi ' + String(j.unique_wifi_aps)) : '—';
+      document.getElementById('glanceUniqueBle').textContent =
+        (j.unique_ble_devices != null) ? ('BLE ' + String(j.unique_ble_devices)) : '—';
+      document.getElementById('glanceFleet').textContent = fleetModeLabel(j);
+      const ctrlCpu = (j.control_cpu_load_pct != null) ? Number(j.control_cpu_load_pct) : null;
+      document.getElementById('glanceFleetDetail').textContent =
+        (ctrlCpu != null && !Number.isNaN(ctrlCpu)) ? ('CPU ' + String(ctrlCpu) + '%') : '—';
+    }
+    /** wolfPACK peer pool + join queue counts (/api/stats). */
+    const ESPNOW_ENCRYPT_PEER_CAP = 16;
+    function syncWolfpackHealth(j) {
+      const card = document.getElementById('wolfpackHealthCard');
+      if (!card) return;
+      if (j.peer_pool_active === undefined || j.peer_pool_active === null) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = '';
+      const active = Number(j.peer_pool_active);
+      const waiters = (j.peer_join_waiters != null) ? Number(j.peer_join_waiters) : 0;
+      const slotsFree = (j.peer_slots_free != null) ? Number(j.peer_slots_free) : null;
+      document.getElementById('wolfpackPeerCount').textContent =
+        String(Number.isNaN(active) ? 0 : active) + ' / ' + String(ESPNOW_ENCRYPT_PEER_CAP);
+      document.getElementById('wolfpackQueueWaiters').textContent =
+        Number.isNaN(waiters) ? '—' : String(waiters);
+      const foot = document.getElementById('wolfpackHealthFoot');
+      const capPressure = waiters > 0 && slotsFree === 0;
+      if (slotsFree != null && !Number.isNaN(slotsFree)) {
+        foot.textContent = capPressure
+          ? (String(slotsFree) + ' slots free — queue blocked at peer cap')
+          : (String(slotsFree) + ' slots free');
+      } else {
+        foot.textContent = capPressure ? 'Queue blocked at peer cap' : '';
+      }
+      foot.classList.toggle('err', capPressure);
+    }
+    async function tick() {
+      try {
+        const r = await fetch('/api/stats', { cache: 'no-store' });
+        const j = await r.json();
+        const nowMs = j.now_ms != null ? j.now_ms : Date.now();
+        const pc = j.provisioning_complete === 1 || j.provisioning_complete === true;
+        const b = document.getElementById('cfgBanner');
+        if (!pc) {
+          b.style.display = 'block';
+          b.innerHTML = 'Home WiFi SSID not saved. Use <a href="/setup">Setup</a> for LAN uploads.';
+        } else { b.style.display = 'none'; b.innerHTML = ''; }
+        const wgc = j.wigle_configured === 1 || j.wigle_configured === true;
+        const wdc = j.wdgwars_configured === 1 || j.wdgwars_configured === true;
+        document.getElementById('wgNote').textContent = (pc && !wgc && !wdc)
+          ? 'No upload API keys — configure on Uploads.' : '';
+
+        syncGlanceCards(j, nowMs);
+        syncWolfpackHealth(j);
+
+        // Compact build identity from /api/stats (full detail on Diagnostics).
+        const fwRevEl = document.getElementById('fwRevLine');
+        if (fwRevEl) {
+          const ver = j.firmware_version != null ? String(j.firmware_version) : '—';
+          const proto = j.proto_version != null ? String(j.proto_version) : '—';
+          fwRevEl.textContent = 'v' + ver + ' · proto ' + proto;
+        }
+
+        document.getElementById('wifi_af').textContent = (j.detection_alerts_fired != null) ? String(j.detection_alerts_fired) : '0';
+        document.getElementById('ble_af').textContent = (j.ble_alerts_fired != null) ? String(j.ble_alerts_fired) : '0';
+        const fllsm = (j.detection_last_seen_ms != null) ? Number(j.detection_last_seen_ms) : 0;
+        const flsk = (j.detection_last_signal_kind != null) ? Number(j.detection_last_signal_kind) : null;
+        const fldm = (j.detection_last_detection_method != null) ? Number(j.detection_last_detection_method) : null;
+        const hasLast = fllsm > 0;
+        document.getElementById('alrt_src').textContent = (j.detection_last_src != null) ? String(j.detection_last_src) : '-';
+        document.getElementById('alrt_ago').textContent = fllsm ? lastSeenAgo(nowMs, fllsm) : '-';
+        document.getElementById('alrt_sid').textContent = (j.detection_last_sniffer_id != null) ? String(j.detection_last_sniffer_id) : '-';
+        document.getElementById('alrt_type').textContent =
+          (hasLast && flsk === 0) ? 'WiFi' : (hasLast && flsk === 1) ? 'BLE' : '—';
+        document.getElementById('alrt_method').textContent =
+          (hasLast && fldm != null && !Number.isNaN(fldm)) ? detectionMethodLabel(fldm) : '—';
+        const lastWc = j.detection_last_wildcard_count;
+        const wifiExtra = document.getElementById('alrt_wifi_extra');
+        if (wifiExtra) {
+          const showW = hasLast && flsk === 0;
+          wifiExtra.style.display = showW ? 'block' : 'none';
+          if (showW) {
+            document.getElementById('alrt_wc').textContent = (lastWc != null) ? String(lastWc) : '-';
+            document.getElementById('alrt_distinct').textContent =
+              (j.detection_last_channel != null) ? String(j.detection_last_channel) : '-';
+          }
+        }
+
+        const flAf = (j.detection_alerts_fired != null) ? Number(j.detection_alerts_fired) : 0;
+        const bleAf = (j.ble_alerts_fired != null) ? Number(j.ble_alerts_fired) : 0;
+        const msrvAf = (j.mobile_surveillance_alerts_fired != null) ? Number(j.mobile_surveillance_alerts_fired) : 0;
+        const swAf = (j.ssid_watch_alerts_fired != null) ? Number(j.ssid_watch_alerts_fired) : 0;
+        const mslsm = (j.mobile_surveillance_last_seen_ms != null) ? Number(j.mobile_surveillance_last_seen_ms) : 0;
+        const swlsm = (j.ssid_watch_last_seen_ms != null) ? Number(j.ssid_watch_last_seen_ms) : 0;
+        const alertSeenMs = Math.max(fllsm, mslsm, swlsm);
+        if (detectionPrevAlerts !== null && detectionPrevBleAlerts !== null && detectionPrevMobileSurvAlerts !== null &&
+            detectionPrevSsidWatchAlerts !== null &&
+            (flAf > detectionPrevAlerts || bleAf > detectionPrevBleAlerts || msrvAf > detectionPrevMobileSurvAlerts ||
+             swAf > detectionPrevSsidWatchAlerts) &&
+            alertSeenMs > 0) {
+          detectionHighlightUntilMs = alertSeenMs + ALERT_HIGHLIGHT_WINDOW_MS;
+        }
+        detectionPrevAlerts = flAf;
+        detectionPrevBleAlerts = bleAf;
+        detectionPrevMobileSurvAlerts = msrvAf;
+        detectionPrevSsidWatchAlerts = swAf;
+        syncDetectionAlertUi(nowMs, j);
+
+        return j;
+      } catch (e) { console.warn('wolfpack: fleet stats poll failed', e); }
+      return null;
+    }
+    document.getElementById('btnMgmt').addEventListener('click', async () => {
+      try {
+        await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'mode=management' });
+        tick();
+      } catch (_) {}
+    });
+    document.getElementById('btnWar').addEventListener('click', async () => {
+      try {
+        await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'mode=wardrive' });
+        tick();
+      } catch (_) {}
+    });
+    document.getElementById('btnIgnoreLastMac').addEventListener('click', () => detectionIgnoreMac(document.getElementById('alrt_src').textContent));
+
+    document.querySelector('.sa-nav a[href="/"]')?.classList.add('sa-nav-active');
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</main>

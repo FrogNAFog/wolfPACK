@@ -1,0 +1,27 @@
+[package]
+name = "wardriver-mobile-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+# cdylib: Android loads libwardriver_mobile_core.so; rlib: host tests link the crate.
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+jni = ["dep:jni"]
+
+[dependencies]
+anyhow = "1"
+hmac = "0.12"
+indexmap = "2"
+serde_json = "1"
+sha2 = "0.10"
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-packlink = { path = "../wardriver-packlink" }
+jni = { version = "0.21", optional = true }
+
+[dev-dependencies]
+serde_json = "1"

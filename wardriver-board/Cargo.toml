@@ -1,0 +1,10 @@
+[package]
+name = "wardriver-board"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+board-xiao = []
+board-marauder = []

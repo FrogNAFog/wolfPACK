@@ -1,0 +1,22 @@
+[package]
+name = "wardriver-keygen"
+version = "0.1.0"
+edition = "2021"
+description = "Host tools: fleet secrets (ESP-NOW PMK, management SoftAP) for esp32-wardriver builds"
+publish = false
+
+[[bin]]
+name = "espnow-pmk-gen"
+path = "src/espnow_pmk_gen.rs"
+
+[[bin]]
+name = "espnow-pmk-rm"
+path = "src/espnow_pmk_rm.rs"
+
+[[bin]]
+name = "mgmt-ap-gen"
+path = "src/mgmt_ap_gen.rs"
+
+[dependencies]
+rand = "0.8"
+sha2 = "0.10"

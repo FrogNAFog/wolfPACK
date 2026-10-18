@@ -1,0 +1,65 @@
+    <main class="sa-page sa-wrap form-simple">
+    <h1>WiGLE exclusions</h1>
+    <p class="small"><a href="/">← Fleet dashboard</a> · <a href="/uploads">/uploads</a> · <a href="/setup">/setup</a></p>
+    <p class="small">
+      BSSIDs and SSIDs listed here are omitted from WiGLE CSV rows and dropped on sniffers. Saving requires an <strong>SD card</strong> mounted at boot.
+    </p>
+    <p class="small">
+      Authoritative files on the SD card:
+      <code style="word-break:break-all" id="wigle_sd_path">—</code> (BSSIDs),
+      <code style="word-break:break-all" id="wigle_ssid_sd_path">—</code> (SSIDs).
+      See <a href="/detections#sec-detection-ignore">Detection exclusions</a> for probe-burst MAC filters.
+    </p>
+    <p class="small"><strong>Auto-excluded (not editable here):</strong> <span id="wigle_home_note">—</span></p>
+
+    <div id="flash-msg"></div>
+
+    <form method="post" action="/wigle-filters/save">
+      <label for="wigle_macs">Additional BSSIDs to exclude</label>
+      <textarea id="wigle_macs" name="macs" autocomplete="off"></textarea>
+      <label for="wigle_ssids">Additional SSIDs to exclude</label>
+      <textarea id="wigle_ssids" name="ssids" autocomplete="off"></textarea>
+      <button type="submit">Save</button>
+    </form>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* Flash banner from redirect query (?msg=ok|err&detail=…). */
+  (function showFlashFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var msg = params.get('msg');
+    var detail = params.get('detail') || '';
+    var el = document.getElementById('flash-msg');
+    if (!el || !msg) return;
+    var p = document.createElement('p');
+    p.className = (msg === 'ok') ? 'ok' : 'err';
+    p.textContent = detail || (msg === 'ok') ? 'Saved.' : 'Error.';
+    el.appendChild(p);
+  })();
+
+  /* Hydrate from consolidated /api/ui-forms (wigle section). */
+  fetch('/api/ui-forms')
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var w = j && j.wigle;
+      if (!w) return;
+      var note = document.getElementById('wigle_home_note');
+      if (note && w.home_note != null) note.textContent = String(w.home_note);
+      var sd = document.getElementById('wigle_sd_path');
+      if (sd && w.sd_path != null) sd.textContent = String(w.sd_path);
+      var sdSsid = document.getElementById('wigle_ssid_sd_path');
+      if (sdSsid && w.ssid_sd_path != null) sdSsid.textContent = String(w.ssid_sd_path);
+      var macs = document.getElementById('wigle_macs');
+      if (macs && w.macs != null) {
+        macs.value = Array.isArray(w.macs) ? w.macs.join('\n') : String(w.macs);
+      }
+      var ssids = document.getElementById('wigle_ssids');
+      if (ssids && w.ssids != null) {
+        ssids.value = Array.isArray(w.ssids) ? w.ssids.join('\n') : String(w.ssids);
+      }
+    })
+    .catch(function (e) { console.warn('wigle-filters: hydrate failed', e); });
+
+  document.querySelector('.sa-nav a[href="/wigle-filters"]')?.classList.add('sa-nav-active');
+});
+</script>
+    </main>
