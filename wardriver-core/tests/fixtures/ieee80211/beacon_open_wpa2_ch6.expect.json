@@ -1,0 +1,7 @@
+{
+  "bssid": "aa:bb:cc:dd:ee:ff",
+  "ssid": "Snoop",
+  "channel": 6,
+  "rssi": -45,
+  "auth": "wpa2"
+}

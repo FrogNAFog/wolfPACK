@@ -1,0 +1,37 @@
+[package]
+name = "wardriver-control"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+board-marauder = ["wardriver-board/board-marauder"]
+board-xiao = ["wardriver-board/board-xiao"]
+screen-st7920 = []
+sd-pin-selftest = []
+mgmt-ap-5ghz = ["wardriver-proto/mgmt-ap-5ghz"]
+
+[dependencies]
+wardriver-shared = { path = "../wardriver-shared", features = ["control"] }
+wardriver-board = { path = "../wardriver-board" }
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-fleet-realtime = { path = "../wardriver-fleet-realtime", features = ["esp"] }
+wardriver-stats = { path = "../wardriver-stats", features = ["control"] }
+log = "0.4"
+anyhow = "1"
+heapless = "0.8"
+base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"] }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"] }
+embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+embedded-svc = "0.29"
+embedded-io = "0.7"
+indexmap = "2.7"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+ssd1306 = { version = "0.9", default-features = false, features = ["graphics"] }
+display-interface-i2c = "0.5"
+embedded-graphics = "0.8"

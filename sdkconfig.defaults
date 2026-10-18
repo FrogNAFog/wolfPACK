@@ -1,0 +1,110 @@
+#
+# Watchdogs (ESP32-C5): INT WDT catches wedged ISRs; Task WDT catches stuck tasks.
+# SD `sync_data()` and long sniffer sweeps can block for seconds — allow a generous timeout.
+#
+CONFIG_ESP_INT_WDT=y
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=30
+CONFIG_ESP_SYSTEM_USE_FRAME_POINTER=y
+
+## ESP32-C5-DevKitC-1 hardware used here has 8 MB flash. The default 2 MB
+## image metadata generates a 1 MB factory partition, too small for this app.
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
+
+## The Rust image is larger than ESP-IDF's default 1 MB factory app slot.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+## Rust threading needs larger stacks than the ESP-IDF C defaults.
+## Main runs WiFi + HTTP upload (mbedTLS) + `/api/stats` JSON build on the control loop.
+## 24 KiB hit stack-canary faults in `core::fmt` float formatting during stats snapshots.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=4096
+CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=8192
+
+## FreeRTOS run-time stats: cheap per-context-switch counters; snapshot ~1 Hz in `cpu_load`.
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
+
+
+## External RAM (PSRAM): N8R8 / XIAO ESP32-C5 + Seeed base boards expose 8 MB PSRAM.
+## Use "malloc() as well" integration so Rust std/alloc and IDF code can benefit
+## without rewiring call sites to heap_caps_* in application code.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_USE_MALLOC=y
+## Allow FreeRTOS / pthread task stacks in PSRAM (Rust `std::thread` on control uses pthread).
+CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM=y
+CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY=y
+## Keep small allocations internal for latency/cache locality; larger allocations
+## will prefer PSRAM.
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+## Protect a DMA/internal-only reserve so generic malloc cannot starve critical paths.
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+## Push WiFi/LwIP allocator paths toward PSRAM first to free internal SRAM headroom.
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+
+## WiFi: enable STA+AP coexistence for provisioning, and dual-band (2.4/5 GHz) for C5.
+CONFIG_ESP_WIFI_ENABLED=y
+## ESP-NOW + SoftAP share 17 hardware CCMP keys; 16 encrypt peers → 1 SoftAP STA (operator).
+CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM=16
+CONFIG_PM_ENABLE=y
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=24
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=48
+CONFIG_ESP_WIFI_TX_BUFFER_TYPE=1
+CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM=48
+CONFIG_ESP_WIFI_AMPDU_TX_ENABLED=y
+CONFIG_ESP_WIFI_AMPDU_RX_ENABLED=y
+CONFIG_ESP_WIFI_SOFTAP_BEACON_MAX_LEN=752
+
+## HTTPS client: Mozilla CA bundle + cross-signed verify (wigle / wdgwars TLS).
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY=y
+CONFIG_ESP_TLS_USING_MBEDTLS=y
+## Allocate TLS I/O buffers from heap per connection instead of static pools (saves internal RAM).
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+
+## SNTP: pool the device can sync time from during the upload window.
+CONFIG_LWIP_SNTP_MAX_SERVERS=2
+
+## FATFS: long filenames and UTF-8 for SSID writes on SD card.
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_MAX_LFN=255
+CONFIG_FATFS_API_ENCODING_UTF_8=y
+
+## SDMMC / SDSPI host is off by default; enabled by code at mount time.
+CONFIG_SDMMC_FREQ_DEFAULT=20000
+
+## Bluetooth: keep **disabled** unless you use `sdkconfig.defaults.ble` (see that file).
+## Enabling NimBLE + controller here without `nimble_port_init` / controller bring-up in Rust
+## leaves coexist/BT firmware half-initialized; on ESP32-C5 the boot log often stops right
+## after the `coexist:` lines and never reaches `app_main`.
+CONFIG_BT_ENABLED=n
+
+## IEEE 802.15.4 MAC is **off** in this project (Thread/Zigbee PHY sniffing was removed).
+CONFIG_IEEE802154_ENABLED=n
+
+## CONFIG_PM_ENABLE=y enables ESP-IDF power management (not Wi-Fi DFS). We do NOT use
+## light-sleep (`esp_pm_configure` with `light_sleep_enable=false`). Keep peripheral
+## power-down in light-sleep off so the IDF does not hit allocation failures in sleep
+## retention init on some targets.
+CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=n
+
+## Logging: keep default info level; can be overridden at runtime.
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+## ESP32-C5-DevKitC-1: default console is UART0 @ 115200. The USB-C port also exposes
+## USB-Serial-JTAG (secondary). If you only monitor the USB CDC device and see truncated
+## logs, switch primary console in menuconfig:
+##   Component config → ESP System Settings → Channel for console output → USB Serial/JTAG
+## Or wire UART0 TX/RX to your adapter at 115200 baud.
+# CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+# CONFIG_ESP_CONSOLE_UART_DEFAULT is not set
+
+## ESP32-C5: ROM SysTimer HAL can diverge from IDF fixes (FreeRTOS tick / alarm 1 path).
+## Use compiled HAL so OS tick counter and ISRs stay consistent with `port_systick.c`.
+CONFIG_HAL_SYSTIMER_USE_ROM_IMPL=n

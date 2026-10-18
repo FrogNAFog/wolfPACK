@@ -1,0 +1,3 @@
+# Parent repo sets default target to RISC-V for firmware; host tools must use the host triple.
+[build]
+target = "x86_64-unknown-linux-gnu"

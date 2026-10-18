@@ -1,0 +1,32 @@
+[package]
+name = "wardriver-stats"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+control = []
+sniffer = []
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std"] }
+
+[dependencies]
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+# `raw_value` enables `serde_json::value::RawValue`, used to emit the fixed-point
+# float fragments (HDOP, GPS rates, soc temp, home-zone lat/lon) verbatim in the
+# `/api/stats` body without pulling in `core::fmt` float formatting.
+serde_json = { version = "1", default-features = false, features = ["alloc", "raw_value"] }
+wardriver-proto = { path = "../wardriver-proto" }
+wardriver-core = { path = "../wardriver-core" }
+log = "0.4"
+
+[dev-dependencies]
+serde_json = "1"
+
+# The /api/stats golden test exercises the feature-gated `stats_body` module
+# (control-only on firmware; the host `control` feature pulls no ESP deps).
+[[test]]
+name = "stats_body_golden"
+required-features = ["control"]

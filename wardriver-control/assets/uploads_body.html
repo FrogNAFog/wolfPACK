@@ -1,0 +1,122 @@
+<main class="sa-page sa-wrap">
+    <h1 class="sa-title" style="font-size:1.2rem;margin-bottom:8px">API uploads</h1>
+    <p class="small"><a href="/">Fleet</a> · <a href="/setup">Setup</a> · <a href="/wigle-filters">WiGLE filters</a> · <a href="/setup#sec-home-zone">Home zone</a></p>
+    <p class="small">Configure uploads to WiGLE and Watch Dogs Go Wars.</p>
+
+    <div id="flash-msg"></div>
+
+    <p><strong>On-device status:</strong> <span id="upload-status">—</span></p>
+    <p><strong>Last uploader run:</strong> <span id="upload-last-run">—</span></p>
+    <p><strong>Pending (top-level):</strong> <span id="upload-pending">—</span> <code>pending/*.csv</code> file(s)</p>
+
+    <form method="post" action="/uploads/save" autocomplete="off">
+      <section>
+        <h2>WiGLE.net</h2>
+        <p class="small"><a href="https://wigle.net/account" target="_blank" rel="noopener">API name and token</a> from your WiGLE account.</p>
+        <p class="small" style="margin-bottom:8px">
+          New to WiGLE? Join the <strong>DeFlock Wardrivers</strong> team. No codes or invites needed.
+        </p>
+        <label for="wg_name">API name</label>
+        <input type="text" id="wg_name" name="wg_name" value="" />
+        <label for="wg_token">API token</label>
+        <input type="password" id="wg_token" name="wg_token" placeholder="empty = keep existing in NVS" value="" />
+      </section>
+      <section>
+        <h2>Watch Dogs Go Wars (wdgwars.pl)</h2>
+        <p class="small"><a href="https://wdgwars.pl/help/#api-docs" target="_blank" rel="noopener">wdgwars.pl/help#api-docs</a></p>
+        <p class="small" style="margin-bottom:8px">
+          Want to join the <strong>DeFlock.org Official</strong> team? Use this key after you sign up: <code>5uIJuz5eQmEZ</code>
+        </p>
+        <label for="wd_key">API key</label>
+        <input type="password" id="wd_key" name="wd_key" placeholder="empty = keep existing in NVS" value="" />
+        <label class="small"><input type="checkbox" name="wd_clear" value="1" /> Clear wdgwars key from device</label>
+        <p style="margin-top:10px">
+          <button type="button" id="btnTestWdgwars">Test wdgwars API key</button>
+        </p>
+        <div id="wdgwars-test-result"></div>
+      </section>
+      <p><button type="submit">Save all upload credentials</button></p>
+    </form>
+
+    <section>
+      <h2>Run uploads on device</h2>
+      <p class="small">Pauses sniffer traffic, connects to your wifi, and runs uploads.</p>
+      <form method="post" action="/uploads/run">
+        <button type="submit">Run uploads now</button>
+      </form>
+    </section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* Flash banner from redirect query (?msg=ok|err&detail=…). */
+  (function showFlashFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var msg = params.get('msg');
+    var detail = params.get('detail') || '';
+    var el = document.getElementById('flash-msg');
+    if (!el || !msg) return;
+    var p = document.createElement('p');
+    p.className = (msg === 'ok') ? 'ok' : 'err';
+    p.textContent = detail || (msg === 'ok' ? 'Saved.' : 'Error.');
+    el.appendChild(p);
+  })();
+
+  function cfgOn(v) { return v === 1 || v === true; }
+
+  /* Hydrate status lines and WiGLE API name from /api/stats. */
+  fetch('/api/stats')
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var wgc = cfgOn(j.wigle_configured);
+      var wdc = cfgOn(j.wdgwars_configured);
+      var status = document.getElementById('upload-status');
+      if (status) {
+        status.textContent = 'WiGLE: ' + (wgc ? 'on' : 'not configured') +
+          ' · WDGoWars: ' + (wdc ? 'on' : 'not configured');
+      }
+      var last = document.getElementById('upload-last-run');
+      if (last) {
+        var wo = (j.upload_last_wigle_ok != null) ? j.upload_last_wigle_ok : 0;
+        var wf = (j.upload_last_wigle_failed != null) ? j.upload_last_wigle_failed : 0;
+        var do_ = (j.upload_last_wdgwars_ok != null) ? j.upload_last_wdgwars_ok : 0;
+        var df = (j.upload_last_wdgwars_failed != null) ? j.upload_last_wdgwars_failed : 0;
+        last.textContent = 'WiGLE ' + wo + ' ok / ' + wf + ' fail · wdgwars ' + do_ + ' ok / ' + df + ' fail';
+      }
+      var pending = document.getElementById('upload-pending');
+      if (pending && j.upload_pending_csv_count != null) {
+        pending.textContent = String(j.upload_pending_csv_count);
+      }
+      var wg = document.getElementById('wg_name');
+      if (wg && j.wigle_api_name != null) wg.value = String(j.wigle_api_name);
+    })
+    .catch(function (e) { console.warn('uploads: stats hydrate failed', e); });
+
+  /* Test wdgwars key via fetch (avoids full-page POST round-trip). */
+  var btnTest = document.getElementById('btnTestWdgwars');
+  if (btnTest) {
+    btnTest.addEventListener('click', function () {
+      var result = document.getElementById('wdgwars-test-result');
+      if (result) result.textContent = 'Testing…';
+      var wdKey = document.getElementById('wd_key');
+      var body = '';
+      if (wdKey && wdKey.value.trim()) {
+        body = 'wd_key=' + encodeURIComponent(wdKey.value.trim());
+      }
+      fetch('/uploads/test-wdgwars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body,
+      })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+          if (result) result.innerHTML = t;
+        })
+        .catch(function (e) {
+          if (result) result.innerHTML = '<p class="err">Request failed: ' + e + '</p>';
+        });
+    });
+  }
+
+  document.querySelector('.sa-nav a[href="/uploads"]')?.classList.add('sa-nav-active');
+});
+</script>
+</main>

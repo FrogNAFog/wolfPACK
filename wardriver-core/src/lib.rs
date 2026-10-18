@@ -1,0 +1,32 @@
+//! Host-testable primitives shared by control and sniffer firmware (no esp-idf).
+
+pub mod ble_adv;
+pub mod boot_button_hold;
+pub mod channel_plan;
+pub mod detection;
+pub mod dwell;
+pub mod fleet_roster;
+pub mod gps_anchor;
+pub mod ieee80211_parse;
+pub mod ingest_limits;
+pub mod liveness;
+pub mod lpr_camera_ble;
+pub mod lpr_camera_probe_ie;
+pub mod lpr_camera_wifi;
+pub mod mac_table;
+pub mod peer_join_queue;
+pub mod probe_burst;
+pub mod remote_id;
+pub mod scan_reasm;
+pub mod sniffer_frag;
+pub mod sniffer_liveness;
+pub mod sniffer_schedule;
+pub mod sniffer_sweep;
+pub mod sniffer_time_set;
+pub mod ssid_watch;
+pub mod sweep_finish_policy;
+pub mod wdgwars_upload;
+pub mod wigle;
+pub mod wigle_ble;
+pub mod wigle_rcoi;
+pub mod wolfpack_telemetry;

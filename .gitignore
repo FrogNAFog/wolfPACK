@@ -1,0 +1,34 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+documents/
+# ESP-IDF build artifacts
+.embuild/
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+.build-tmp
+# Python
+**/__pycache__/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Fleet ESP-NOW PMK (never commit)
+.fleet/
+
+# Release zip output (local handoff to GitHub Releases; never commit binaries)
+/release/
+
+# Runtime / local config
+/config.local.toml
+
+
+
+# Host tool binaries (e.g. vendored arduino-cli)
+/tools/bin/

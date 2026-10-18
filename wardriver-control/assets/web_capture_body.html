@@ -1,0 +1,164 @@
+<main class="sa-page sa-wrap" style="padding-bottom:32px">
+  <h2>Capture</h2>
+  <p class="muted small">
+    <strong>Collectors</strong> write raw RF captures to SD under <code>wolfPACK/recon/</code> — separate from Detection scoring.
+    <strong>Wardriving pauses</strong> while a collector job runs.
+    Detection detectors: <a href="/detections">Detections</a>.
+  </p>
+
+  <h3 id="sec-collectors" style="margin-top:20px">Collectors</h3>
+
+  <section class="card" style="margin-top:12px">
+    <h4 class="small" style="margin:0 0 8px 0;font-weight:600">WiFi probe requests (60s)</h4>
+    <p class="small">Passive probe requests only. Sniffers hop <strong>2.4 + 5 GHz</strong> (incl. DFS listen-only); ESP-NOW leaves DFS only on the control channel. Output: <code>recon/wifiprobes/&lt;Timestamp&gt;_probecapture.pcapng</code> (Wireshark).</p>
+    <p id="reconStatus" class="muted small" style="margin-top:8px">Idle.</p>
+    <p id="reconTimer" class="small" style="margin-top:6px;font-variant-numeric:tabular-nums;display:none" aria-live="polite"></p>
+    <p id="reconPath" class="small" style="margin-top:4px;word-break:break-all"></p>
+    <button type="button" id="btnReconStart" style="margin-top:12px" disabled>Start capture</button>
+  </section>
+
+  <section style="margin-top:20px">
+    <h4 class="small" style="margin:0 0 6px 0;font-weight:600">Future collectors</h4>
+    <p class="muted small">Additional capture types will appear here; catalog from <code>/api/capture/catalog</code>.</p>
+    <pre id="reconCatalog" class="small" style="overflow:auto;max-height:200px;margin-top:8px;background:#0f172a0d;padding:8px;border-radius:6px"></pre>
+  </section>
+</main>
+
+<script>
+(function () {
+  var statusEl = document.getElementById('reconStatus');
+  var timerEl = document.getElementById('reconTimer');
+  var pathEl = document.getElementById('reconPath');
+  var btn = document.getElementById('btnReconStart');
+  var catEl = document.getElementById('reconCatalog');
+
+  function formatCountdownMs(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  /* True after POST /api/capture/start until stats show recon_hold/recon_active or 15s timeout. */
+  var reconStartPending = false;
+  var reconStartPendingSince = 0;
+  /* Poll /api/stats every 1s while capturing, else 3s when idle. */
+  var pollTimer = null;
+  function scheduleNextPoll(active) {
+    if (pollTimer) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    pollTimer = setTimeout(runPoll, active ? 1000 : 3000);
+  }
+
+  async function refreshCatalog() {
+    try {
+      var r = await fetch('/api/capture/catalog');
+      var t = await r.text();
+      catEl.textContent = t;
+    } catch (e) {
+      catEl.textContent = String(e);
+    }
+  }
+
+  /* /api/stats JSON keys stay recon_* on the wire; UI labels use Capture. */
+  async function pollStats() {
+    try {
+      var r = await fetch('/api/stats');
+      var j = await r.json();
+      var h = j.recon_hold ? 1 : 0;
+      var a = j.recon_active ? 1 : 0;
+      var sid = j.recon_session_id != null ? j.recon_session_id : 0;
+      var fr = j.recon_frags_rx != null ? j.recon_frags_rx : 0;
+      var pk = j.recon_pkts_written != null ? j.recon_pkts_written : 0;
+      var op = j.recon_output_path != null ? String(j.recon_output_path) : '';
+      var rem = j.recon_remaining_ms != null ? Number(j.recon_remaining_ms) : 0;
+      var capturing = !!(a || h);
+      if (capturing) {
+        reconStartPending = false;
+        statusEl.textContent = 'Running… session_id=' + sid + ' frags_rx=' + fr + ' pcap_pkts=' + pk;
+        btn.disabled = true;
+        timerEl.style.display = '';
+        if (rem > 0) {
+          timerEl.textContent = 'Time left: ' + formatCountdownMs(rem);
+        } else {
+          timerEl.textContent = 'Capture window finished · wrapping up…';
+        }
+      } else {
+        if (reconStartPending) {
+          var waited = Date.now() - reconStartPendingSince;
+          if (waited > 15000) {
+            reconStartPending = false;
+          }
+        }
+        var blockStart = reconStartPending;
+        if (!capturing && !blockStart) {
+          statusEl.textContent = 'Idle.';
+          btn.disabled = false;
+        } else if (!capturing && blockStart) {
+          statusEl.textContent = 'Queued… waiting for capture to start.';
+          btn.disabled = true;
+        }
+        timerEl.textContent = '';
+        timerEl.style.display = 'none';
+      }
+      pathEl.textContent = op ? ('wolfPACK/' + op) : '';
+      return capturing || reconStartPending;
+    } catch (e) {
+      statusEl.textContent = 'Stats error: ' + e;
+      timerEl.textContent = '';
+      timerEl.style.display = 'none';
+      if (!reconStartPending) {
+        btn.disabled = false;
+      }
+      return false;
+    }
+  }
+
+  async function runPoll() {
+    var active = await pollStats();
+    scheduleNextPoll(active);
+  }
+
+  btn.addEventListener('click', async function () {
+    if (btn.disabled) {
+      return;
+    }
+    btn.disabled = true;
+    statusEl.textContent = 'Starting…';
+    try {
+      var r = await fetch('/api/capture/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'job=wifi_probe_pcap'
+      });
+      var t = await r.text();
+      if (!r.ok) {
+        statusEl.textContent = t || ('HTTP ' + r.status);
+        btn.disabled = false;
+        return;
+      }
+      reconStartPending = true;
+      reconStartPendingSince = Date.now();
+      statusEl.textContent = t;
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      await runPoll();
+    } catch (e) {
+      statusEl.textContent = String(e);
+      reconStartPending = false;
+      btn.disabled = false;
+    }
+  });
+
+  refreshCatalog();
+  runPoll();
+
+  if (location.pathname === '/capture' || location.pathname === '/recon') {
+    document.querySelector('.sa-nav a[href="/capture"]')?.classList.add('sa-nav-active');
+  }
+})();
+</script>

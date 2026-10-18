@@ -1,0 +1,127 @@
+[workspace]
+resolver = "2"
+members = [
+    ".",
+    "wardriver-keygen",
+    "wardriver-proto",
+    "wardriver-core",
+    "wardriver-board",
+    "wardriver-stats",
+    "wardriver-shared",
+    "wardriver-control",
+    "wardriver-sniffer",
+    "wardriver-tools",
+    "wardriver-packlink",
+    "wardriver-mobile-core",
+    "wardriver-gateway",
+    "wardriver-fleet-realtime",
+]
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+debug = true
+opt-level = "z"
+panic = "abort"
+
+# Host x86_64 `cargo test` with workspace build-std; unwind avoids duplicate-core (see cargo#7359).
+[profile.test]
+inherits = "dev"
+panic = "unwind"
+
+[package]
+name = "esp32-wardriver"
+version = "0.1.0"
+authors = ["esp32-wardriver contributors"]
+edition = "2021"
+rust-version = "1.82"
+license = "MIT OR Apache-2.0"
+description = "ESP32-C5 Rust wardriver that scans WiFi/BLE, writes WiGLE CSVs to SD, and uploads to wigle.net on boot."
+# `cargo run` with `--features control` (no `--bin`): control is the usual dev image.
+# Sniffer builds still need `--bin esp32-wardriver-sniffer` or `cargo flash-sniffer`.
+default-run = "esp32-wardriver-control"
+
+[package.metadata.esp-idf-sys]
+# Use BLE defaults by default so `--features sniffer` produces a unified WiFi+BLE-capable
+# sniffer image that can be role-switched from the control dashboard.
+esp_idf_sdkconfig_defaults = ["sdkconfig.defaults", "sdkconfig.defaults.ble"]
+
+# Link `esp_driver_tsens` and extend bindgen with `driver/temperature_sensor.h` (SoC temp).
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["idf_extra/wardriver_tsens"]
+bindings_header = "idf_extra/bindings_extra.h"
+
+# Separate ELF names so control and sniffer release builds do not overwrite each other.
+[[bin]]
+name = "esp32-wardriver-control"
+path = "src/main.rs"
+required-features = ["control"]
+harness = false
+
+[[bin]]
+name = "esp32-wardriver-sniffer"
+path = "src/main.rs"
+required-features = ["sniffer"]
+harness = false
+
+[[bin]]
+name = "esp32-wardriver-gateway"
+path = "src/main.rs"
+required-features = ["gateway"]
+harness = false
+
+[features]
+default = []
+ble = []
+control = ["dep:wardriver-control", "wardriver-shared/control", "wardriver-stats/control"]
+# Unified sniffer firmware (WiFi sniffer + BLE observer); role is controlled over ESP-NOW.
+sniffer = ["dep:wardriver-sniffer", "wardriver-sniffer/ble", "wardriver-shared/sniffer", "wardriver-stats/sniffer"]
+# BLE gateway: ESP-NOW wolfPACK coprocessor + PackLink GATT (no SD/GPS/web).
+gateway = ["dep:wardriver-gateway", "wardriver-shared/control", "wardriver-stats/control"]
+
+# Control-node board pin profiles (select exactly one when building `control`)
+board-marauder = ["wardriver-control/board-marauder"]
+# XIAO ESP32-C5 on Seeed expansion base (stacked L76K GNSS, on-board SD, shield buzzer) — primary.
+board-xiao = ["wardriver-control/board-xiao"]
+
+# Optional peripherals (control-only; feature-gated)
+screen-st7920 = ["wardriver-control/screen-st7920"]
+# Boot-time GPIO wiggle on XIAO SD SPI nets (`board-xiao`, CS=D2/GPIO25); scope / meter bring-up.
+sd-pin-selftest = ["wardriver-control/sd-pin-selftest"]
+# 5 GHz management SoftAP on ch 161 (default ch 11 on 2.4 GHz).
+mgmt-ap-5ghz = ["wardriver-proto/mgmt-ap-5ghz", "wardriver-control?/mgmt-ap-5ghz"]
+
+[dependencies]
+wardriver-shared = { path = "wardriver-shared" }
+wardriver-control = { path = "wardriver-control", optional = true }
+wardriver-sniffer = { path = "wardriver-sniffer", optional = true }
+wardriver-gateway = { path = "wardriver-gateway", optional = true }
+wardriver-board = { path = "wardriver-board" }
+wardriver-core = { path = "wardriver-core" }
+wardriver-proto = { path = "wardriver-proto" }
+wardriver-stats = { path = "wardriver-stats" }
+log = "0.4"
+anyhow = "1"
+heapless = "0.8"
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = { version = "0.46", default-features = false, features = ["std"] }
+esp-idf-sys = { version = "0.37", default-features = false, features = ["std", "binstart"] }
+embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+embedded-svc = "0.29"
+embedded-io = "0.7"
+serde = { version = "1", default-features = false, features = ["derive"] }
+
+[build-dependencies]
+embuild = "0.33"
+
+# IDF 6.0.x: crates.io releases lack 6.0 support; patch to esp-rs master (2026-03).
+[patch.crates-io]
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys", rev = "eaf69b2ae2a3b0816346c51ea326634b5d3dc88b" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", rev = "79dd63480a73a4ff11a49a5df95024bd85cd3912" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal", rev = "24e99b865a0ffc87dcb4f4142fb06daeb9481c89" }
+# IDF 6.0.1 tools manifest includes win-arm64; embuild 0.33 on crates.io does not.
+embuild = { git = "https://github.com/esp-rs/embuild", rev = "d5f79aefa6913cb6ec9f9d4add24e946ad0bb4db" }

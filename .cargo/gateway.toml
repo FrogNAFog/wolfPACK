@@ -1,0 +1,3 @@
+# Gateway uses the same ESP-IDF sdkconfig as control (`sdkconfig.defaults.ble` via root
+# `Cargo.toml` `[package.metadata.esp-idf-sys]`). This file is kept for tooling that
+# still passes `--config .cargo/gateway.toml`; do not override ESP_IDF_SDKCONFIG_DEFAULTS.

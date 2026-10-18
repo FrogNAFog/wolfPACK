@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wolfpack-stats-tier-a-rev1",
+  "title": "/api/stats Tier A (stats_schema_rev 1)",
+  "description": "Minimal schema for the Tier A block embedded in GET /api/stats. Additional keys may appear.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "stats_schema_rev",
+    "now_ms",
+    "uptime_ms",
+    "scan_allowed",
+    "csv_enqueue_allowed",
+    "sniffers"
+  ],
+  "properties": {
+    "stats_schema_rev": { "type": "integer", "const": 1 },
+    "firmware_version": { "type": "string" },
+    "firmware_role": { "type": "string" },
+    "board_profile": { "type": "string" },
+    "proto_version": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "esp_idf_version": { "type": "string" },
+    "now_ms": { "type": "integer", "minimum": 0 },
+    "uptime_ms": { "type": "integer", "minimum": 0 },
+    "scan_allowed": { "type": "integer", "enum": [0, 1] },
+    "csv_enqueue_allowed": { "type": "integer", "enum": [0, 1] },
+    "fleet_phase": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "fleet_phase_name": { "type": "string" },
+    "fleet_phase_entered_ms": { "type": "integer", "minimum": 0 },
+    "fleet_phase_transitions": { "type": "integer", "minimum": 0 },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "sniffers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sniffer_slot" }
+    }
+  },
+  "$defs": {
+    "sniffer_slot": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["sniffer_id"],
+      "properties": {
+        "sniffer_id": { "type": "integer", "minimum": 1 },
+        "bulk_lost_cycles": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "description": "Tier B pipeline / timing (see wardriver_stats::DiagnosticsSnapshot)",
+      "additionalProperties": true
+    }
+  }
+}

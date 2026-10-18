@@ -1,0 +1,3 @@
+# Host-only crate: parent workspace defaults to RISC-V + build-std for firmware.
+[build]
+target = "x86_64-unknown-linux-gnu"

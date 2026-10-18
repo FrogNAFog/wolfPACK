@@ -1,0 +1,27 @@
+[package]
+name = "wardriver-tools"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "wardriver-tools"
+path = "src/main.rs"
+
+[[bin]]
+name = "write_proto_golden_v1"
+path = "src/bin/write_proto_golden_v1.rs"
+
+[[bin]]
+name = "write_ieee80211_fixtures"
+path = "src/bin/write_ieee80211_fixtures.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+wardriver-core = { path = "../wardriver-core" }
+wardriver-proto = { path = "../wardriver-proto" }
+
+[features]
+mgmt-ap-5ghz = ["wardriver-proto/mgmt-ap-5ghz"]

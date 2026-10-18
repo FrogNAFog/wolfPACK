@@ -1,0 +1,60 @@
+# Deploys the web flasher (webflash/) from a published release to GitHub Pages.
+# The release zip is built by tools/make-release-zip.sh on a build machine and
+# attached to the release; no Rust/ESP-IDF toolchain runs here.
+name: webflash-pages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Extract webflash/ from the release zip
+        run: |
+          set -euo pipefail
+          # Latest published release (the workflow fires on release publish or
+          # manual dispatch; in both cases we want the newest release's zip).
+          gh auth status || true
+          tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 \
+                  --json tagName -q '.[0].tagName') \
+            || { echo "gh release list failed"; exit 1; }
+          [ -n "$tag" ] || { echo "no releases found"; exit 1; }
+          echo "using release: $tag"
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+             -D "$RUNNER_TEMP/asset" --clobber \
+            || { echo "gh release download failed for $tag"; exit 1; }
+          zip=$(find "$RUNNER_TEMP/asset" -name '*.zip' -print -quit)
+          [ -n "$zip" ] || { echo "no zip asset"; exit 1; }
+          echo "using zip asset: $(basename "$zip")"
+          unzip -q "$zip" -d "$RUNNER_TEMP/unzipped"
+          dir=$(find "$RUNNER_TEMP/unzipped" -type d -name webflash -print -quit)
+          [ -n "$dir" ] || { echo "webflash/ not in zip"; exit 1; }
+          mkdir -p pages/webflash
+          cp -a "$dir/." pages/webflash/
+          echo '<!doctype html><meta http-equiv="refresh" content="0; url=webflash/">' > pages/index.html
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Host-side management SoftAP credential helpers. Must not use the repo default
+# `build.target` (ESP32 RISC-V), so we always pass an explicit host triple to `cargo run`.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+HOST="$(rustc -vV | sed -n 's/^host: //p')"
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+  gen)
+    exec cargo run --manifest-path "$ROOT/wardriver-keygen/Cargo.toml" \
+      --bin mgmt-ap-gen --target "$HOST" -- "$@"
+    ;;
+  *)
+    echo "usage: $0 gen [-- extra args]" >&2
+    exit 1
+    ;;
+esac

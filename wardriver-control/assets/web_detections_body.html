@@ -1,0 +1,241 @@
+<main class="sa-page sa-wrap" style="padding-bottom:32px">
+  <h2>Detections</h2>
+  <p class="muted small">
+    <strong>Detectors</strong> (Detection WiFi + BLE, always-on on the control node) use sniffer data over ESP-NOW.
+    Live sniffer list: <a href="/">Fleet</a>.
+    Probe PCAP capture: <a href="/capture">Capture</a>.
+  </p>
+  <p class="muted small">SD: <span id="detSdV">—</span> · Preferences: <code>wolfPACK/config/preferences.json</code></p>
+
+  <h3 id="sec-detectors" style="margin-top:20px">Detectors</h3>
+
+  <div class="card" style="margin-top:8px;padding:12px 14px">
+    <p class="muted small" style="margin:0 0 6px 0">
+      Detection is always on, even when wardriving is gated by GPS or home zone.
+    </p>
+    <p class="muted small" style="margin:0">
+      WiFi alerts: <span id="detStripWaf">—</span> · BLE alerts: <span id="detStripBaf">—</span>
+    </p>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h4 class="small" style="margin:0 0 8px 0;font-weight:600">WiFi detectors</h4>
+    <p class="muted small" style="margin:0 0 8px 0">Deprecated methods are likely to be false positives and no true positives.</p>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_w1" />
+      Method 1 — wildcard probe + Flock OUI <span class="muted">(medium confidence)</span>
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_w2" />
+      Method 2 — wildcard probe + IE signature + Flock OUI (certain)
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_w3" />
+      Method 3 — wildcard probe + IE signature (high confidence)
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_w4" />
+      Method 4 — Axon OUI <code>00:25:DF</code> (mobile surveillance Wi-Fi)
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_w5" />
+      Method 5 — i-PRO OUI <code>D4:2D:C5</code> (probe-request Wi-Fi)
+    </label>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h4 class="small" style="margin:0 0 8px 0;font-weight:600">BLE detectors</h4>
+    <p class="muted small" style="margin:0 0 8px 0">Source data: <code>BleScanFrag</code> from BLE-role sniffers; merged in <code>FlockBleDetector::ingest</code>.</p>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_b32" />
+      32 — Xuntong manufacturer ID <span class="muted">(deprecated)</span>
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_b33" />
+      33 — Advertised name keyword <span class="muted">(deprecated)</span>
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_b34" />
+      34 — MAC OUI <span class="muted">(deprecated)</span>
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_b35" />
+      35 — Axon OUI (mobile surveillance) — <code>mobile_surveillance/detections/Axon-&lt;ts&gt;.mdetectioncsv</code>
+    </label>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_b36" />
+      36 — i-PRO OUI <code>D4:2D:C5</code> (mobile surveillance BLE)
+    </label>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h4 class="small" style="margin:0 0 8px 0;font-weight:600">BLE scan mode</h4>
+    <p class="muted small" style="margin:0 0 8px 0">
+      Active scan transmits SCAN_REQ so advertisers may return scan-response AD (name / manufacturer data).
+      Default is passive. Active scan does not defeat BLE address randomization (RPA) for OUI methods 35/36.
+    </p>
+    <label class="small" style="display:block;margin:6px 0">
+      <input type="checkbox" id="dt_ble_active" />
+      Active BLE scan (BLE-role sniffers)
+    </label>
+  </div>
+
+  <p style="margin-top:12px">
+    <button type="button" id="btnDetSave">Save detector toggles</button>
+    <span id="detSaveHint" class="muted small" style="margin-left:8px"></span>
+  </p>
+
+  <h3 id="sec-detection-ignore" style="margin-top:20px">Detection MAC ignore list</h3>
+  <div id="flash-msg"></div>
+  <p class="small">
+    List false positive MACs here to suppress Detection alerts for that device.
+  </p>
+  <p class="small">
+    MACs are saved to the SD card for persistent storage and can be directly edited.
+    <code class="path" id="detection_sd_path">—</code>
+  </p>
+  <form method="post" action="/detection-ignore/save">
+    <label for="detection_macs">MAC addresses (one per line)</label>
+    <textarea id="detection_macs" name="macs" autocomplete="off"></textarea>
+    <button type="submit">Save</button>
+  </form>
+
+  <h3 id="sec-ssid-watch" style="margin-top:20px">SSID watchlist</h3>
+  <p class="small">
+    Alert (buzzer + fleet banner) when a sniffer hears an AP <strong>beacon</strong> with a listed SSID.
+    No separate log file. Max 32 SSIDs, 32 UTF-8 bytes each.
+  </p>
+  <p class="small">
+    Saved to <code class="path" id="ssid_watch_sd_path">—</code>
+  </p>
+  <form method="post" action="/ssid-watch/save">
+    <label for="ssid_watch_list">SSIDs (one per line)</label>
+    <textarea id="ssid_watch_list" name="ssids" autocomplete="off"></textarea>
+    <button type="submit">Save SSID watchlist</button>
+  </form>
+</main>
+
+<script>
+(function () {
+  var detectionDetMaskDirty = false;
+  var DEFAULT_DETECTION_DISABLE_WIFI_MASK = 1;
+  var DEFAULT_DETECTION_DISABLE_BLE_MASK = 7;
+  var AXON_WIFI_DISABLE_BIT = 8;
+  var IPRO_WIFI_DISABLE_BIT = 16;
+  var AXON_BLE_DISABLE_BIT = 8;
+  var IPRO_BLE_DISABLE_BIT = 16;
+
+  async function tick() {
+    try {
+      const r = await fetch('/api/stats');
+      const j = await r.json();
+      document.getElementById('detSdV').textContent = j.sd_mounted ? 'yes' : 'no';
+      document.getElementById('detStripWaf').textContent = (j.detection_alerts_fired != null) ? String(j.detection_alerts_fired) : '—';
+      document.getElementById('detStripBaf').textContent = (j.ble_alerts_fired != null) ? String(j.ble_alerts_fired) : '—';
+
+      if (!detectionDetMaskDirty) {
+        const fldwm = (j.detection_disable_wifi_mask != null) ? Number(j.detection_disable_wifi_mask) : DEFAULT_DETECTION_DISABLE_WIFI_MASK;
+        const fldbm = (j.detection_disable_ble_mask != null) ? Number(j.detection_disable_ble_mask) : DEFAULT_DETECTION_DISABLE_BLE_MASK;
+        document.getElementById('dt_w1').checked = (fldwm & 1) === 0;
+        document.getElementById('dt_w2').checked = (fldwm & 2) === 0;
+        document.getElementById('dt_w3').checked = (fldwm & 4) === 0;
+        document.getElementById('dt_w4').checked = (fldwm & AXON_WIFI_DISABLE_BIT) === 0;
+        document.getElementById('dt_w5').checked = (fldwm & IPRO_WIFI_DISABLE_BIT) === 0;
+        document.getElementById('dt_b32').checked = (fldbm & 1) === 0;
+        document.getElementById('dt_b33').checked = (fldbm & 2) === 0;
+        document.getElementById('dt_b34').checked = (fldbm & 4) === 0;
+        document.getElementById('dt_b35').checked = (fldbm & AXON_BLE_DISABLE_BIT) === 0;
+        document.getElementById('dt_b36').checked = (fldbm & IPRO_BLE_DISABLE_BIT) === 0;
+        document.getElementById('dt_ble_active').checked = !!j.ble_active_scan;
+      }
+      return j;
+    } catch (e) { console.warn('wolfpack: detections poll failed', e); }
+    return null;
+  }
+
+  function detectionDetectorMasksFromUi() {
+    var w = 0; var b = 0;
+    if (!document.getElementById('dt_w1').checked) w |= 1;
+    if (!document.getElementById('dt_w2').checked) w |= 2;
+    if (!document.getElementById('dt_w3').checked) w |= 4;
+    if (!document.getElementById('dt_w4').checked) w |= AXON_WIFI_DISABLE_BIT;
+    if (!document.getElementById('dt_w5').checked) w |= IPRO_WIFI_DISABLE_BIT;
+    if (!document.getElementById('dt_b32').checked) b |= 1;
+    if (!document.getElementById('dt_b33').checked) b |= 2;
+    if (!document.getElementById('dt_b34').checked) b |= 4;
+    if (!document.getElementById('dt_b35').checked) b |= AXON_BLE_DISABLE_BIT;
+    if (!document.getElementById('dt_b36').checked) b |= IPRO_BLE_DISABLE_BIT;
+    return { w: w, b: b };
+  }
+
+  ['dt_w1', 'dt_w2', 'dt_w3', 'dt_w4', 'dt_w5', 'dt_b32', 'dt_b33', 'dt_b34', 'dt_b35', 'dt_b36', 'dt_ble_active'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', function () { detectionDetMaskDirty = true; });
+  });
+  document.getElementById('btnDetSave').addEventListener('click', async function () {
+    var hint = document.getElementById('detSaveHint');
+    var m = detectionDetectorMasksFromUi();
+    var active = document.getElementById('dt_ble_active').checked ? '1' : '0';
+    try {
+      var r = await fetch('/api/detection-detectors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'wifi_disable=' + encodeURIComponent(String(m.w))
+          + '&ble_disable=' + encodeURIComponent(String(m.b))
+          + '&ble_active_scan=' + encodeURIComponent(active),
+      });
+      var j = await r.json().catch(function () { return {}; });
+      if (hint) {
+        hint.textContent = j.ok ? 'Saved.' : (j.error || ('Failed' + (r.ok ? '' : ' (HTTP ' + r.status + ')')));
+      }
+      if (j.ok) {
+        detectionDetMaskDirty = false;
+        tick();
+      }
+    } catch (e) {
+      if (hint) hint.textContent = 'Request failed: ' + e;
+    }
+  });
+
+  tick();
+  setInterval(tick, 1000);
+
+  if (location.pathname === '/detections') {
+    document.querySelector('.sa-nav a[href="/detections"]')?.classList.add('sa-nav-active');
+  }
+
+  (function showFlashFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var msg = params.get('msg');
+    var detail = params.get('detail') || '';
+    var el = document.getElementById('flash-msg');
+    if (!el || !msg) return;
+    var p = document.createElement('p');
+    p.className = (msg === 'ok') ? 'ok' : 'err';
+    p.textContent = detail || (msg === 'ok' ? 'Saved.' : 'Error.');
+    el.appendChild(p);
+  })();
+
+  fetch('/api/ui-forms')
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var f = j && j.detection;
+      if (!f) return;
+      var sd = document.getElementById('detection_sd_path');
+      if (sd && f.sd_path != null) sd.textContent = String(f.sd_path);
+      var macs = document.getElementById('detection_macs');
+      if (macs && f.macs != null) {
+        macs.value = Array.isArray(f.macs) ? f.macs.join('\n') : String(f.macs);
+      }
+      var sw = j && j.ssid_watch;
+      if (sw) {
+        var sd = document.getElementById('ssid_watch_sd_path');
+        if (sd && sw.sd_path != null) sd.textContent = String(sw.sd_path);
+        var ta = document.getElementById('ssid_watch_list');
+        if (ta && sw.ssids != null) {
+          ta.value = Array.isArray(sw.ssids) ? sw.ssids.join('\n') : String(sw.ssids);
+        }
+      }
+    })
+    .catch(function (e) { console.warn('detections: detection-ignore hydrate failed', e); });
+})();
+</script>

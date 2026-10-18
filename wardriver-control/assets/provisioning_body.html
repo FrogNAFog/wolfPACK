@@ -1,0 +1,104 @@
+<main class="sa-page sa-wrap form-simple">
+    <h1 class="sa-title" style="font-size:1.2rem;margin-bottom:8px">WiFi setup</h1>
+    <p class="small"><a href="/">Fleet</a> · <a href="/uploads">Uploads</a> · <a href="/wigle-filters">WiGLE filters</a></p>
+    <p class="small">
+      Enter your <strong>home WiFi</strong> SSID for uploading log files. <a href="/uploads">WiGLE / wdgwars</a> setup is in Uploads. You can also customize the management SoftAP SSID and password used to manage the wolfPACK.
+    </p>
+
+    <div id="flash-msg"></div>
+
+    <form method="post" action="/save">
+      <div class="row">
+        <div>
+          <label for="sta_ssid">WiFi SSID</label>
+          <input id="sta_ssid" name="sta_ssid" type="text" autocomplete="off" required />
+        </div>
+        <div>
+          <label for="sta_pass">WiFi password</label>
+          <input id="sta_pass" name="sta_pass" type="password" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label for="ap_ssid">Management SoftAP SSID</label>
+          <input id="ap_ssid" name="ap_ssid" type="text" autocomplete="off" value="" required />
+        </div>
+        <div>
+          <label for="ap_pass">Management SoftAP password (WPA2)</label>
+          <input id="ap_pass" name="ap_pass" type="password" autocomplete="off" placeholder="blank = keep current password" />
+        </div>
+      </div>
+
+      <div class="checks">
+        <label>
+          <input type="checkbox" name="upload_on_boot" value="1" checked />
+          On boot, upload pending <code>*.csv</code> when home WiFi works and upload credentials are set
+        </label>
+      </div>
+
+      <button type="submit">Save &amp; reboot</button>
+    </form>
+
+    <p class="small" style="margin-top:16px">
+      Defaults: SoftAP <code>wolfPACK</code> / <code>deflock123</code> · <code>http://192.168.71.1/</code>
+    </p>
+
+    <section id="sec-home-zone" style="margin-top:28px">
+      <h2 style="font-size:1.1rem;margin-bottom:8px">GPS privacy zone (detection only)</h2>
+      <p class="small">
+        Use a GPS privacy zone to stop wardrive capture and WiGLE logging while you are at home or another fixed location. Sniffers keep detection scanning (Detection / mobile-surveillance alerts).
+      </p>
+      <p class="small">Default radius is ~0.5 mile (805 m) if left blank.</p>
+      <p class="small"><strong>Current GPS (quality-gated):</strong> <span id="home_zone_gps_line">—</span></p>
+      <form method="post" action="/home-zone/save">
+        <label for="lat">Latitude (decimal degrees, −90…90)</label>
+        <input type="text" id="lat" name="lat" autocomplete="off" value="" />
+        <label for="lon">Longitude (decimal degrees, −180…180)</label>
+        <input type="text" id="lon" name="lon" autocomplete="off" value="" />
+        <label for="radius_m">Radius (meters, optional)</label>
+        <input type="text" id="radius_m" name="radius_m" autocomplete="off" value="" placeholder="1000" />
+        <p>
+          <button type="submit" name="action" value="save">Save</button>
+          <button type="submit" name="action" value="from_gps">Use current GPS</button>
+          <button type="submit" name="action" value="clear">Clear zone</button>
+        </p>
+      </form>
+    </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* Flash banner from redirect query (?msg=ok|err&detail=…). */
+  (function showFlashFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var msg = params.get('msg');
+    var detail = params.get('detail') || '';
+    var el = document.getElementById('flash-msg');
+    if (!el || !msg) return;
+    var p = document.createElement('p');
+    p.className = (msg === 'ok') ? 'ok' : 'err';
+    p.textContent = detail || (msg === 'ok' ? 'Saved.' : 'Error.');
+    el.appendChild(p);
+  })();
+
+  /* One-shot hydration from /api/stats (no polling — setup form is static). */
+  fetch('/api/stats')
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var ap = document.getElementById('ap_ssid');
+      if (ap && j.management_ap_ssid != null) ap.value = String(j.management_ap_ssid);
+      var lat = document.getElementById('lat');
+      if (lat && j.home_zone_lat != null) lat.value = String(j.home_zone_lat);
+      var lon = document.getElementById('lon');
+      if (lon && j.home_zone_lon != null) lon.value = String(j.home_zone_lon);
+      var rad = document.getElementById('radius_m');
+      if (rad && j.home_zone_radius_m != null) rad.value = String(j.home_zone_radius_m);
+      var gps = document.getElementById('home_zone_gps_line');
+      if (gps && j.home_zone_gps_line != null) gps.textContent = String(j.home_zone_gps_line);
+    })
+    .catch(function (e) { console.warn('setup: stats hydrate failed', e); });
+
+  document.querySelector('.sa-nav a[href="/setup"]')?.classList.add('sa-nav-active');
+});
+</script>
+</main>

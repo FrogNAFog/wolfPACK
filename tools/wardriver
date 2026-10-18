@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# wolfPACK flash/build entry point.
+#
+# Operators (extracted release zip):
+#   ./tools/install-flash-tools.sh
+#   ./tools/wardriver flash-control
+#   ./tools/wardriver flash-sniffers --batch
+#
+# Developers (repo clone):
+#   ./tools/wardriver flash control
+#   ./tools/wardriver make-release
+#
+set -euo pipefail
+WARDRIVER_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${WARDRIVER_SCRIPT_DIR}/.."
+
+usage() {
+  cat <<'EOF' >&2
+usage: ./tools/wardriver <subcommand> [args...]
+
+subcommands:
+  install-flash-tools [args...]  Install espflash (flash-only host setup)
+  flash-control [args...]        Flash control firmware (board picker)
+  flash-gateway [args...]        Flash gateway firmware (single board)
+  flash-sniffers [args...]       Flash sniffer fleet (--batch or --sequential)
+  make-release [args...]         Build release zip to release/ (maintainers)
+  flash control [args...]        cargo run control (board-xiao default)
+  flash sniffer [args...]        cargo run sniffer
+  flash gateway [args...]        cargo run gateway (NAN PackLink coprocessor firmware)
+
+examples:
+  ./tools/wardriver install-flash-tools
+  ./tools/wardriver flash-control --board marauder
+  ./tools/wardriver flash-control --board marauder -j 4
+  ./tools/wardriver flash-control --mgmt-ap-5ghz
+  ./tools/wardriver flash-sniffers --batch
+  ./tools/wardriver flash-sniffers --batch --mgmt-ap-5ghz
+  ./tools/wardriver make-release
+  BOARD=board-marauder ./tools/wardriver flash control
+  WARDRIVER_MGMT_AP_5GHZ=1 ./tools/wardriver flash control
+  WARDRIVER_MGMT_AP_5GHZ=1 ./tools/wardriver flash sniffer
+  ./tools/wardriver flash gateway
+EOF
+  exit 1
+}
+
+cmd="${1:-}"
+[[ -n "$cmd" ]] || usage
+shift
+
+case "$cmd" in
+  install-flash-tools)
+    exec "${WARDRIVER_SCRIPT_DIR}/install-flash-tools.sh" "$@"
+    ;;
+  flash-control)
+    exec "${WARDRIVER_SCRIPT_DIR}/flash-control.sh" "$@"
+    ;;
+  flash-gateway)
+    exec "${WARDRIVER_SCRIPT_DIR}/flash-gateway.sh" "$@"
+    ;;
+  flash-sniffers)
+    exec "${WARDRIVER_SCRIPT_DIR}/flash-sniffers.sh" "$@"
+    ;;
+  make-release)
+    exec "${WARDRIVER_SCRIPT_DIR}/make-release-zip.sh" "$@"
+    ;;
+  flash)
+    role="${1:-}"
+    [[ -n "$role" ]] || usage
+    shift
+    board="${BOARD:-board-xiao}"
+    mgmt_5ghz=""
+    build_jobs=""
+    if [[ -n "${WARDRIVER_MGMT_AP_5GHZ:-}" && "${WARDRIVER_MGMT_AP_5GHZ}" != "0" ]]; then
+      mgmt_5ghz="mgmt-ap-5ghz"
+    fi
+    flash_args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -j|--jobs)
+          [[ $# -ge 2 ]] || usage
+          build_jobs="$2"
+          shift 2
+          ;;
+        *) flash_args+=("$1"); shift ;;
+      esac
+    done
+    cargo_job_args=()
+    [[ -n "$build_jobs" ]] && cargo_job_args=(-j "$build_jobs")
+    case "$role" in
+      control|c)
+        exec cargo run --release "${cargo_job_args[@]}" --bin esp32-wardriver-control \
+          --features "control ${board} ${mgmt_5ghz}" "${flash_args[@]}"
+        ;;
+      sniffer|s)
+        exec cargo run --release "${cargo_job_args[@]}" --bin esp32-wardriver-sniffer \
+          --features "sniffer ${mgmt_5ghz}" "${flash_args[@]}"
+        ;;
+      gateway|g)
+        exec cargo run --release "${cargo_job_args[@]}" --config .cargo/gateway.toml \
+          --bin esp32-wardriver-gateway --features "gateway" "${flash_args[@]}"
+        ;;
+      *)
+        echo "unknown flash role: $role (use control, sniffer, or gateway)" >&2
+        usage
+        ;;
+    esac
+    ;;
+  *)
+    echo "unknown subcommand: $cmd" >&2
+    usage
+    ;;
+esac
