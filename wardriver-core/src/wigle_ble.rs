@@ -1,6 +1,8 @@
 //! WiGLE Android Bluetooth CSV helpers (`DEVICE_TYPE_LEGEND` + CoD AD `0x0D`).
 //!
 //! Primary reference: WiGLE `BluetoothReceiver.handleLeScanResult`.
+//! Legend labels transcribed from WiGLE (BSD-3-Clause, Copyright 2010-2026
+//! Andrew Carra, Robert Hagemann, Hugh Kennedy).
 
 /// `BluetoothClass.Device.Major.UNCATEGORIZED` (0x1F00).
 pub const MAJOR_UNCATEGORIZED: u16 = 0x1F00;
