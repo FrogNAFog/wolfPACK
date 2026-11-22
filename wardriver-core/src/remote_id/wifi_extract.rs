@@ -10,7 +10,6 @@ const WLAN_FC_STYPE_ACTION: u16 = 0x00D0;
 
 const IE_VENDOR: u8 = 221;
 
-const ASTM_OUI: [u8; 3] = [0xFA, 0x0B, 0xBC];
 const PARROT_OUI: [u8; 3] = [0x90, 0x3A, 0xE6];
 const ODID_APP_CODE: u8 = 0x0D;
 
@@ -68,26 +67,16 @@ fn ies_parseable(mpdu: &[u8]) -> bool {
 }
 
 fn extract_from_beacon(mpdu: &[u8]) -> Option<&[u8]> {
-    if mpdu.len() < 36 {
-        return None;
+    let ies = mpdu.get(36..)?;
+    // remoteid strips the 1-byte message counter, so a counter of 0xF0-0xFF
+    // is never mistaken for a message pack header.
+    if let Some(rid) = remoteid::wifi::find_in_elements(ies) {
+        return Some(rid.payload);
     }
-    let mut i = 36usize;
-    while i + 2 <= mpdu.len() {
-        let id = mpdu[i];
-        let elen = mpdu[i + 1] as usize;
-        i += 2;
-        if i + elen > mpdu.len() {
-            break;
-        }
-        let body = &mpdu[i..i + elen];
-        if id == IE_VENDOR && elen >= 4 {
-            if (body[..3] == ASTM_OUI || body[..3] == PARROT_OUI) && body[3] == ODID_APP_CODE {
-                return body.get(4..);
-            }
-        }
-        i += elen;
-    }
-    None
+    remoteid::wifi::elements(ies).find_map(|(id, body)| {
+        (id == IE_VENDOR && body.len() >= 6 && body[..3] == PARROT_OUI && body[3] == ODID_APP_CODE)
+            .then(|| &body[5..])
+    })
 }
 
 fn extract_from_nan_action(mpdu: &[u8]) -> Option<&[u8]> {
