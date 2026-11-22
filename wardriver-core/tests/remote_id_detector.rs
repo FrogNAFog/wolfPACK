@@ -1,8 +1,8 @@
 mod remote_id_helpers;
 
 use remote_id_helpers::{
-    beacon_with_vendor_ie, ble_service_data_adv, sample_basic_id_msg, sample_location_msg,
-    sample_message_pack,
+    beacon_with_vendor_ie, beacon_with_vendor_ie_counter, ble_service_data_adv,
+    sample_basic_id_msg, sample_location_msg, sample_message_pack,
 };
 use wardriver_core::detection::{
     remote_id_wifi_disable_bit, DetectionSignalKind, RemoteIdBleDetectionMethod,
@@ -158,4 +158,23 @@ fn extract_beacon_vendor_ie_ch149_fixture() {
     let (payload, transport) = extract_wifi_remote_id_from_mgmt(&mpdu).expect("ch149 beacon");
     assert_eq!(transport, RemoteIdWifiTransport::Beacon);
     assert_eq!(payload.len(), 25);
+}
+
+#[test]
+fn beacon_counter_0xf0_to_0xff_still_decodes() {
+    let src = [0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F];
+    let pack = sample_message_pack(&[
+        sample_basic_id_msg(b"COUNTER-F5"),
+        sample_location_msg(47.6, -122.3, 60.0),
+    ]);
+    for counter in 0xF0..=0xFFu8 {
+        let mpdu = beacon_with_vendor_ie_counter(src, counter, &pack);
+        let (payload, _) = extract_wifi_remote_id_from_mgmt(&mpdu).expect("beacon extract");
+        assert_eq!(payload, &pack[..], "counter {counter:#04x}");
+        let mut det = RemoteIdDetector::new();
+        assert!(
+            det.ingest_wifi(4, 0, &mpdu, src, -60, 6, 0).is_some(),
+            "counter {counter:#04x}"
+        );
+    }
 }

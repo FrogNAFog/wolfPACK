@@ -11,6 +11,7 @@ default = []
 anyhow = "1"
 heapless = "0.8"
 indexmap = "2.7"
+remoteid = { version = "0.3.3", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 wardriver-proto = { path = "../wardriver-proto" }
 

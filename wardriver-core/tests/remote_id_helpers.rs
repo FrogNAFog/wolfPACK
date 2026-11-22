@@ -44,6 +44,10 @@ pub fn sample_message_pack(msgs: &[[u8; MESSAGE_SIZE]]) -> Vec<u8> {
 }
 
 pub fn beacon_with_vendor_ie(src: [u8; 6], odid_payload: &[u8]) -> Vec<u8> {
+    beacon_with_vendor_ie_counter(src, 0x01, odid_payload)
+}
+
+pub fn beacon_with_vendor_ie_counter(src: [u8; 6], counter: u8, odid_payload: &[u8]) -> Vec<u8> {
     let mut mpdu = Vec::new();
     mpdu.extend_from_slice(&[0x80, 0x00]); // beacon
     mpdu.extend_from_slice(&[0x00, 0x00]); // duration
@@ -57,11 +61,11 @@ pub fn beacon_with_vendor_ie(src: [u8; 6], odid_payload: &[u8]) -> Vec<u8> {
                                            // SSID IE
     mpdu.push(0); // id
     mpdu.push(0); // len
-                  // Vendor IE: FA:0B:BC + app 0x0D + ODID
-    let vendor_len = 4 + odid_payload.len();
+                  // Vendor IE: FA:0B:BC + app 0x0D + message counter + ODID
+    let vendor_len = 5 + odid_payload.len();
     mpdu.push(221);
     mpdu.push(vendor_len as u8);
-    mpdu.extend_from_slice(&[0xFA, 0x0B, 0xBC, 0x0D]);
+    mpdu.extend_from_slice(&[0xFA, 0x0B, 0xBC, 0x0D, counter]);
     mpdu.extend_from_slice(odid_payload);
     mpdu
 }
